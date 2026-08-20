@@ -1,4 +1,5 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
@@ -6,7 +7,15 @@ import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function StockScreen() {
-  const { stock, items, stockOrdered, requestReorder, toggleItemAvailable } = useKitchenStore();
+  const { stock, items, stockOrdered, requestReorder, toggleItemAvailable } = useKitchenStore(
+    useShallow((s) => ({
+      stock: s.stock,
+      items: s.items,
+      stockOrdered: s.stockOrdered,
+      requestReorder: s.requestReorder,
+      toggleItemAvailable: s.toggleItemAvailable,
+    }))
+  );
   const visibleLocationIds = useVisibleLocationIds();
 
   const scopedStock = stock.filter((s) => visibleLocationIds.includes(s.location_id));

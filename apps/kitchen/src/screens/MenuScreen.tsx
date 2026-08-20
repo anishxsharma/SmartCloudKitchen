@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
@@ -8,7 +9,15 @@ import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function MenuScreen() {
-  const { brands: scopedBrands, items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore();
+  const { brands: scopedBrands, items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore(
+    useShallow((s) => ({
+      brands: s.brands,
+      items: s.items,
+      menuBrandId: s.menuBrandId,
+      setMenuBrand: s.setMenuBrand,
+      toggleItemAvailable: s.toggleItemAvailable,
+    }))
+  );
   const visibleLocationIds = useVisibleLocationIds();
 
   const locationLabel =

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { OrderStage } from '@smartcloudkitchen/types';
@@ -22,14 +23,39 @@ export function QueueScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_BREAKPOINT;
 
+  // Selector (not the bare store hook) — Menu/Stock/Sales stay mounted
+  // via bottom-tabs once visited, and this screen's own 1s tick was
+  // re-rendering all of them needlessly every second for as long as the
+  // app was open.
   const { brands, orders, lines, items, now, loading, error, filter, selectedOrderId, tick, setFilter, selectOrder, advanceOrder, toggleLineDone } =
-    useKitchenStore();
+    useKitchenStore(
+      useShallow((s) => ({
+        brands: s.brands,
+        orders: s.orders,
+        lines: s.lines,
+        items: s.items,
+        now: s.now,
+        loading: s.loading,
+        error: s.error,
+        filter: s.filter,
+        selectedOrderId: s.selectedOrderId,
+        tick: s.tick,
+        setFilter: s.setFilter,
+        selectOrder: s.selectOrder,
+        advanceOrder: s.advanceOrder,
+        toggleLineDone: s.toggleLineDone,
+      }))
+    );
   const visibleLocationIds = useVisibleLocationIds();
 
+  // Only tick while there's something with a live promise clock —
+  // otherwise this runs for the rest of the session the moment the app
+  // ever had one open order.
   useEffect(() => {
+    if (!orders.some((o) => o.stage !== 'picked')) return;
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [tick]);
+  }, [orders, tick]);
 
   const brandName = (brandId: string) => brands.find((b) => b.id === brandId)?.name ?? brandId;
 
