@@ -5,6 +5,7 @@ export * from './feedback';
 export * from './analytics';
 export * from './staff';
 export * from './customerAuth';
+export * from './googleAuth';
 export * from './offlineQueue';
 export * from './nativeAdapters';
 export * from './pushTokens';

@@ -16,22 +16,41 @@ export function PhoneAuthScreen() {
   const navigation = useNavigation<any>();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [googlePhone, setGooglePhone] = useState('');
 
-  const { otpPhone, sendingOtp, verifyingOtp, authError, customer: signedInCustomer, sendOtp, verifyOtp, cancelPhoneAuth, placeOrder, trackOrderId } =
-    useCustomerStore(
-      useShallow((s) => ({
-        otpPhone: s.otpPhone,
-        sendingOtp: s.sendingOtp,
-        verifyingOtp: s.verifyingOtp,
-        authError: s.authError,
-        customer: s.customer,
-        sendOtp: s.sendOtp,
-        verifyOtp: s.verifyOtp,
-        cancelPhoneAuth: s.cancelPhoneAuth,
-        placeOrder: s.placeOrder,
-        trackOrderId: s.trackOrderId,
-      }))
-    );
+  const {
+    otpPhone,
+    sendingOtp,
+    verifyingOtp,
+    authError,
+    customer: signedInCustomer,
+    sendOtp,
+    verifyOtp,
+    cancelPhoneAuth,
+    placeOrder,
+    signInWithGoogle,
+    googleSigningIn,
+    pendingGoogleProfile,
+    finishGoogleSignup,
+    finishingGoogleSignup,
+  } = useCustomerStore(
+    useShallow((s) => ({
+      otpPhone: s.otpPhone,
+      sendingOtp: s.sendingOtp,
+      verifyingOtp: s.verifyingOtp,
+      authError: s.authError,
+      customer: s.customer,
+      sendOtp: s.sendOtp,
+      verifyOtp: s.verifyOtp,
+      cancelPhoneAuth: s.cancelPhoneAuth,
+      placeOrder: s.placeOrder,
+      signInWithGoogle: s.signInWithGoogle,
+      googleSigningIn: s.googleSigningIn,
+      pendingGoogleProfile: s.pendingGoogleProfile,
+      finishGoogleSignup: s.finishGoogleSignup,
+      finishingGoogleSignup: s.finishingGoogleSignup,
+    }))
+  );
 
   // Verification just succeeded — this screen only exists to unblock
   // checkout, so finish the order that brought the customer here.
@@ -47,18 +66,46 @@ export function PhoneAuthScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedInCustomer]);
 
+  const busy = sendingOtp || verifyingOtp || googleSigningIn || finishingGoogleSignup;
+
   return (
     <View style={{ flex: 1, backgroundColor: customer.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <View style={{ gap: 6, marginBottom: 28, alignItems: 'center' }}>
         <Text style={styles.eyebrow}>ONE STEP LEFT</Text>
-        <Text style={styles.title}>{otpPhone ? 'Enter the code' : 'Verify your number'}</Text>
+        <Text style={styles.title}>
+          {pendingGoogleProfile ? 'Add a phone number' : otpPhone ? 'Enter the code' : 'Sign in to order'}
+        </Text>
         <Text style={styles.subtitle}>
-          {otpPhone ? `We sent a code to ${otpPhone}` : "We'll text you a code to confirm your order and keep you posted on it."}
+          {pendingGoogleProfile
+            ? "You're signed in — we just need a number to reach you about this order."
+            : otpPhone
+              ? `We sent a code to ${otpPhone}`
+              : "We'll text you a code to confirm your order and keep you posted on it."}
         </Text>
       </View>
 
       <View style={{ gap: 12, width: '100%' }}>
-        {otpPhone ? (
+        {pendingGoogleProfile ? (
+          <>
+            <TextInput
+              style={styles.input}
+              value={googlePhone}
+              onChangeText={setGooglePhone}
+              placeholder="98765 43210"
+              placeholderTextColor={customer.textFaint}
+              keyboardType="phone-pad"
+              autoFocus
+              editable={!finishingGoogleSignup}
+            />
+            <Pressable
+              disabled={googlePhone.trim().length < 6 || finishingGoogleSignup}
+              onPress={() => finishGoogleSignup(toE164(googlePhone))}
+              style={[styles.cta, (googlePhone.trim().length < 6 || finishingGoogleSignup) && { opacity: 0.5 }]}
+            >
+              {finishingGoogleSignup ? <ActivityIndicator color={customer.ctaFg} /> : <Text style={styles.ctaLabel}>Continue &amp; place order</Text>}
+            </Pressable>
+          </>
+        ) : otpPhone ? (
           <>
             <TextInput
               style={styles.input}
@@ -90,14 +137,24 @@ export function PhoneAuthScreen() {
               placeholderTextColor={customer.textFaint}
               keyboardType="phone-pad"
               autoFocus
-              editable={!sendingOtp}
+              editable={!busy}
             />
             <Pressable
-              disabled={phone.trim().length < 6 || sendingOtp}
+              disabled={phone.trim().length < 6 || busy}
               onPress={() => sendOtp(toE164(phone))}
-              style={[styles.cta, (phone.trim().length < 6 || sendingOtp) && { opacity: 0.5 }]}
+              style={[styles.cta, (phone.trim().length < 6 || busy) && { opacity: 0.5 }]}
             >
               {sendingOtp ? <ActivityIndicator color={customer.ctaFg} /> : <Text style={styles.ctaLabel}>Send code</Text>}
+            </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerLabel}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Pressable disabled={busy} onPress={signInWithGoogle} style={[styles.googleBtn, busy && { opacity: 0.5 }]}>
+              {googleSigningIn ? <ActivityIndicator color={customer.text} /> : <Text style={styles.googleLabel}>Continue with Google</Text>}
             </Pressable>
           </>
         )}
@@ -117,4 +174,9 @@ const styles = StyleSheet.create({
   ctaLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 15, color: customer.ctaFg },
   link: { fontFamily: type.display, fontWeight: '600', fontSize: 12.5, color: customer.textSoft, textAlign: 'center', marginTop: 4 },
   error: { marginTop: 20, fontFamily: type.display, fontSize: 12, color: '#C0472A', textAlign: 'center' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: customer.border },
+  dividerLabel: { fontFamily: type.mono, fontWeight: '600', fontSize: 10, letterSpacing: 1, color: customer.textFaint },
+  googleBtn: { minHeight: minTapTarget, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: customer.surface, borderWidth: 1, borderColor: customer.border },
+  googleLabel: { fontFamily: type.display, fontWeight: '600', fontSize: 15, color: customer.text },
 });

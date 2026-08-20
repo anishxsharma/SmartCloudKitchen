@@ -1,18 +1,37 @@
+import { Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { create } from 'zustand';
 import {
+  consumeOAuthSession,
   fetchBrands,
   fetchFeedbackForOrder,
   fetchMenuItems,
   fetchMyCustomer,
   fetchOrder,
+  getGoogleOAuthUrl,
   insertDirectOrder,
+  resolveOAuthSession,
   sendCustomerOtp,
   signOutCustomer as signOutCustomerAuth,
   submitFeedback,
+  upsertCustomerProfile,
   verifyCustomerOtp,
 } from '@smartcloudkitchen/api-client';
 import { CUSTOMER_LOCATION_ID } from '@smartcloudkitchen/mock-data';
 import type { Brand, Customer, MenuItem, Order, OrderFeedback, OrderLine } from '@smartcloudkitchen/types';
+import { OAUTH_MESSAGE_TYPE } from '../hooks/useOAuthPopupSelfClose';
+
+function parseHashParams(url: string): Record<string, string> {
+  const hashIndex = url.indexOf('#');
+  if (hashIndex === -1) return {};
+  const params: Record<string, string> = {};
+  for (const pair of url.slice(hashIndex + 1).split('&')) {
+    const [key, value] = pair.split('=');
+    if (key) params[decodeURIComponent(key)] = decodeURIComponent(value ?? '');
+  }
+  return params;
+}
 
 export interface CartLine {
   menuItemId: string;
@@ -43,13 +62,17 @@ interface CustomerState {
   /** Set once usePushRegistration resolves — see App.tsx. */
   pushToken: string | null;
 
-  /** Phone-OTP checkout identity — null until verified. Session persists across app opens (see api-client's client.ts). */
+  /** Checkout identity (phone-OTP or Google) — null until signed in. Session persists across app opens (see api-client's client.ts). */
   customer: Customer | null;
   customerBootstrapped: boolean;
   otpPhone: string | null;
   sendingOtp: boolean;
   verifyingOtp: boolean;
   authError: string | null;
+  googleSigningIn: boolean;
+  /** Set once a Google session exists but there's no customers row yet — Google gives no phone, so one more step collects it. */
+  pendingGoogleProfile: { userId: string; displayName: string | null } | null;
+  finishingGoogleSignup: boolean;
 
   tick: () => void;
   setPushToken: (token: string) => void;
@@ -58,6 +81,9 @@ interface CustomerState {
   sendOtp: (phone: string) => Promise<void>;
   verifyOtp: (code: string) => Promise<void>;
   cancelPhoneAuth: () => void;
+  signInWithGoogle: () => Promise<void>;
+  completeGoogleSession: (accessToken: string, refreshToken: string) => Promise<void>;
+  finishGoogleSignup: (phone: string) => Promise<void>;
   signOutCustomer: () => Promise<void>;
   setShopBrand: (brandId: string) => void;
   openItem: (itemId: string) => void;
@@ -98,6 +124,9 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   sendingOtp: false,
   verifyingOtp: false,
   authError: null,
+  googleSigningIn: false,
+  pendingGoogleProfile: null,
+  finishingGoogleSignup: false,
 
   tick: () => set({ now: Date.now() }),
   setPushToken: (pushToken) => set({ pushToken }),
@@ -134,6 +163,87 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   },
 
   cancelPhoneAuth: () => set({ otpPhone: null, authError: null }),
+
+  signInWithGoogle: async () => {
+    set({ googleSigningIn: true, authError: null });
+    try {
+      const redirectTo = Linking.createURL('auth-callback');
+      const url = await getGoogleOAuthUrl(redirectTo);
+
+      if (Platform.OS === 'web') {
+        // A full-page redirect would unmount the app and lose the
+        // in-memory cart (nothing persists it across a reload) — a
+        // popup keeps the main tab alive. useOAuthPopupSelfClose runs
+        // in the popup once it lands back on our origin, hands the
+        // session tokens over via postMessage, and closes itself.
+        const popup = window.open(url, 'sck-google-auth', 'width=480,height=640');
+        const tokens = await new Promise<{ accessToken: string; refreshToken: string } | null>((resolve) => {
+          const timer = setInterval(() => {
+            if (popup?.closed) {
+              clearInterval(timer);
+              window.removeEventListener('message', onMessage);
+              resolve(null);
+            }
+          }, 500);
+          function onMessage(event: MessageEvent) {
+            if (event.origin !== window.location.origin || event.data?.type !== OAUTH_MESSAGE_TYPE) return;
+            clearInterval(timer);
+            window.removeEventListener('message', onMessage);
+            resolve({ accessToken: event.data.accessToken, refreshToken: event.data.refreshToken });
+          }
+          window.addEventListener('message', onMessage);
+        });
+
+        if (!tokens) {
+          set({ googleSigningIn: false });
+          return;
+        }
+        await get().completeGoogleSession(tokens.accessToken, tokens.refreshToken);
+        return;
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
+      if (result.type !== 'success' || !result.url) {
+        set({ googleSigningIn: false });
+        return;
+      }
+      const params = parseHashParams(result.url);
+      if (!params.access_token || !params.refresh_token) {
+        set({ googleSigningIn: false, authError: 'Google sign-in did not return a session.' });
+        return;
+      }
+      await get().completeGoogleSession(params.access_token, params.refresh_token);
+    } catch (err) {
+      set({ googleSigningIn: false, authError: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
+  completeGoogleSession: async (accessToken, refreshToken) => {
+    set({ googleSigningIn: true, authError: null });
+    try {
+      await consumeOAuthSession(accessToken, refreshToken);
+      const { userId, displayName, customer } = await resolveOAuthSession();
+      if (customer) {
+        set({ customer, googleSigningIn: false, pendingGoogleProfile: null });
+      } else {
+        set({ googleSigningIn: false, pendingGoogleProfile: { userId, displayName } });
+      }
+    } catch (err) {
+      set({ googleSigningIn: false, authError: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
+  finishGoogleSignup: async (phone) => {
+    const { pendingGoogleProfile } = get();
+    if (!pendingGoogleProfile) return;
+    set({ finishingGoogleSignup: true, authError: null });
+    try {
+      const customer = await upsertCustomerProfile(pendingGoogleProfile.userId, phone, pendingGoogleProfile.displayName);
+      set({ customer, finishingGoogleSignup: false, pendingGoogleProfile: null });
+    } catch (err) {
+      set({ finishingGoogleSignup: false, authError: err instanceof Error ? err.message : String(err) });
+    }
+  },
 
   signOutCustomer: async () => {
     await signOutCustomerAuth();

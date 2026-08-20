@@ -2,6 +2,7 @@
   "expo": {
     "name": "SmartCloudKitchen",
     "slug": "smartcloudkitchen-customer",
+    "scheme": "smartcloudkitchen",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,7 +24,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
