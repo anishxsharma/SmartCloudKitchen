@@ -37,6 +37,8 @@ interface KitchenState {
   toggleLineDone: (lineId: string) => void;
   toggleItemAvailable: (itemId: string) => void;
   requestReorder: (stockId: string) => void;
+  /** Re-fetches items for the currently loaded brands — called after creating/editing one from the item form. */
+  refreshItems: () => Promise<void>;
 }
 
 export const useKitchenStore = create<KitchenState>((set, get) => ({
@@ -146,4 +148,15 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
   // No purchase-order table yet — this stays a local "I've requested it"
   // flag until reordering is a real backend flow.
   requestReorder: (stockId) => set((s) => ({ stockOrdered: { ...s.stockOrdered, [stockId]: true } })),
+
+  refreshItems: async () => {
+    const brandIds = get().brands.map((b) => b.id);
+    if (!brandIds.length) return;
+    try {
+      const items = await fetchMenuItems(brandIds);
+      set({ items });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : String(err) });
+    }
+  },
 }));

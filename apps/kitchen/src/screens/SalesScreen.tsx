@@ -1,4 +1,6 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { fetchFeedbackForLocations, type FeedbackWithOrder } from '@smartcloudkitchen/api-client';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { money, colorForBrand } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
@@ -55,6 +57,18 @@ function mmss(totalSeconds: number): string {
 export function SalesScreen() {
   const visibleLocationIds = useVisibleLocationIds();
   const multiLocation = visibleLocationIds.length > 1;
+
+  const [feedback, setFeedback] = useState<FeedbackWithOrder[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+
+  useEffect(() => {
+    if (!visibleLocationIds.length) return;
+    setFeedbackLoading(true);
+    fetchFeedbackForLocations(visibleLocationIds)
+      .then(setFeedback)
+      .catch(() => setFeedback([]))
+      .finally(() => setFeedbackLoading(false));
+  }, [visibleLocationIds.join(',')]);
 
   const locationLabel = multiLocation
     ? 'ALL LOCATIONS'
@@ -136,6 +150,27 @@ export function SalesScreen() {
             );
           })}
         </View>
+
+        <Text style={[styles.sectionLabel, { paddingLeft: 2 }]}>RECENT FEEDBACK</Text>
+        {feedbackLoading ? (
+          <ActivityIndicator color={kitchen.accent} />
+        ) : feedback.length === 0 ? (
+          <View style={styles.feedbackEmpty}>
+            <Text style={styles.feedbackEmptyText}>No ratings yet.</Text>
+          </View>
+        ) : (
+          <View style={{ gap: 8 }}>
+            {feedback.map((f) => (
+              <View key={f.id} style={styles.feedbackRow}>
+                <View style={styles.feedbackTop}>
+                  <Text style={styles.feedbackCode}>{f.order.code}</Text>
+                  <Text style={styles.feedbackStars}>{'★'.repeat(f.rating)}{'☆'.repeat(5 - f.rating)}</Text>
+                </View>
+                {f.comment ? <Text style={styles.feedbackComment}>{f.comment}</Text> : null}
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -162,4 +197,11 @@ const styles = StyleSheet.create({
   track: { height: 6, borderRadius: 99, backgroundColor: kitchen.borderSoft, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 99 },
   brandFoot: { fontFamily: type.mono, fontWeight: '500', fontSize: 11, color: kitchen.textFaint },
+  feedbackEmpty: { padding: 24, borderRadius: 14, borderWidth: 1, borderStyle: 'dashed', borderColor: kitchen.borderSoft, alignItems: 'center' },
+  feedbackEmptyText: { fontFamily: type.display, fontWeight: '500', fontSize: 13, color: kitchen.textFaint },
+  feedbackRow: { padding: 13, paddingHorizontal: 14, borderRadius: 14, backgroundColor: kitchen.surface, borderWidth: 1, borderColor: kitchen.borderSoft, gap: 6 },
+  feedbackTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  feedbackCode: { fontFamily: type.mono, fontWeight: '600', fontSize: 13, color: kitchen.text },
+  feedbackStars: { fontFamily: type.display, fontSize: 14, color: kitchen.accent, letterSpacing: 1 },
+  feedbackComment: { fontFamily: type.display, fontWeight: '400', fontSize: 12.5, lineHeight: 18, color: kitchen.textSoft },
 });

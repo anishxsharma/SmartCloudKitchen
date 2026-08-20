@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { subscribeToOrder } from '@smartcloudkitchen/api-client';
 import type { Order, OrderStage } from '@smartcloudkitchen/types';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
@@ -94,10 +94,82 @@ function TrackContent({ order, now }: { order: Order; now: number }) {
         })}
       </View>
 
-      <View style={styles.map}>
-        <Text style={styles.mapLabel}>live rider map</Text>
-      </View>
+      {order.stage === 'picked' ? (
+        <FeedbackCard orderId={order.id} />
+      ) : (
+        <View style={styles.map}>
+          <Text style={styles.mapLabel}>live rider map</Text>
+        </View>
+      )}
     </ScrollView>
+  );
+}
+
+function FeedbackCard({ orderId }: { orderId: string }) {
+  const { feedback, feedbackLoading, feedbackSubmitting, checkFeedback, submitOrderFeedback } = useCustomerStore(
+    useShallow((s) => ({
+      feedback: s.feedback,
+      feedbackLoading: s.feedbackLoading,
+      feedbackSubmitting: s.feedbackSubmitting,
+      checkFeedback: s.checkFeedback,
+      submitOrderFeedback: s.submitOrderFeedback,
+    }))
+  );
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+
+  useEffect(() => {
+    checkFeedback(orderId);
+  }, [orderId, checkFeedback]);
+
+  if (feedbackLoading) {
+    return (
+      <View style={[styles.feedbackCard, { alignItems: 'center' }]}>
+        <ActivityIndicator color={customer.text} />
+      </View>
+    );
+  }
+
+  if (feedback) {
+    return (
+      <View style={styles.feedbackCard}>
+        <Text style={styles.feedbackTitle}>Thanks for rating your order</Text>
+        <View style={styles.starsRow}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Text key={n} style={[styles.star, { color: n <= feedback.rating ? '#E08A12' : '#DCD2C0' }]}>★</Text>
+          ))}
+        </View>
+        {feedback.comment ? <Text style={styles.feedbackComment}>{feedback.comment}</Text> : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.feedbackCard}>
+      <Text style={styles.feedbackTitle}>How was your order?</Text>
+      <View style={styles.starsRow}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <Pressable key={n} onPress={() => setRating(n)} hitSlop={6}>
+            <Text style={[styles.star, { color: n <= rating ? '#E08A12' : '#DCD2C0' }]}>★</Text>
+          </Pressable>
+        ))}
+      </View>
+      <TextInput
+        style={styles.feedbackInput}
+        value={comment}
+        onChangeText={setComment}
+        placeholder="Anything worth telling the kitchen? (optional)"
+        placeholderTextColor="#9A9184"
+        multiline
+      />
+      <Pressable
+        disabled={!rating || feedbackSubmitting}
+        onPress={() => submitOrderFeedback(rating, comment.trim() || null)}
+        style={[styles.feedbackSubmit, (!rating || feedbackSubmitting) && { opacity: 0.5 }]}
+      >
+        {feedbackSubmitting ? <ActivityIndicator color={customer.ctaFg} /> : <Text style={styles.feedbackSubmitLabel}>Submit rating</Text>}
+      </Pressable>
+    </View>
   );
 }
 
@@ -117,4 +189,12 @@ const styles = StyleSheet.create({
   stepNote: { fontFamily: type.mono, fontWeight: '500', fontSize: 11, color: customer.textFaint },
   map: { height: 150, borderRadius: 16, backgroundColor: '#EFE7D8', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 10 },
   mapLabel: { fontFamily: type.mono, fontWeight: '500', fontSize: 10, color: '#A09684' },
+  feedbackCard: { padding: 18, borderRadius: 18, backgroundColor: customer.surface, borderWidth: 1, borderColor: customer.border, gap: 12 },
+  feedbackTitle: { fontFamily: type.display, fontWeight: '700', fontSize: 17, color: customer.text },
+  starsRow: { flexDirection: 'row', gap: 6 },
+  star: { fontSize: 30, lineHeight: 34 },
+  feedbackComment: { fontFamily: type.display, fontWeight: '400', fontSize: 13, lineHeight: 19, color: customer.textSoft },
+  feedbackInput: { minHeight: 64, borderRadius: 12, borderWidth: 1, borderColor: customer.border, backgroundColor: customer.bg, padding: 12, fontFamily: type.display, fontSize: 13, color: customer.text, textAlignVertical: 'top' },
+  feedbackSubmit: { minHeight: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: customer.ctaBg },
+  feedbackSubmitLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 15, color: customer.ctaFg },
 });

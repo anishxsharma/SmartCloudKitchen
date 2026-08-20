@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
@@ -9,6 +10,7 @@ import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function MenuScreen() {
+  const navigation = useNavigation<any>();
   const { brands: scopedBrands, items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore(
     useShallow((s) => ({
       brands: s.brands,
@@ -57,7 +59,16 @@ export function MenuScreen() {
         })}
       </ScrollView>
 
-      <Text style={styles.summary}>{summary}</Text>
+      <View style={styles.summaryRow}>
+        <Text style={styles.summary}>{summary}</Text>
+        <Pressable
+          disabled={!menuBrandId}
+          onPress={() => navigation.navigate('MenuItemForm', {})}
+          style={[styles.addBtn, !menuBrandId && { opacity: 0.4 }]}
+        >
+          <Text style={styles.addBtnLabel}>+ Add dish</Text>
+        </Pressable>
+      </View>
 
       <FlatList
         data={brandItems}
@@ -67,12 +78,22 @@ export function MenuScreen() {
           const margin = Math.round((1 - item.cost_cents / item.price_cents) * 100);
           return (
             <View style={[styles.row, { borderColor: item.available ? kitchen.borderSoft : '#5B2E22' }]}>
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[styles.name, { color: item.available ? kitchen.text : kitchen.textFaint }]}>{item.name}</Text>
-                <Text style={styles.meta}>
-                  {money(item.price_cents)} · {margin}% margin · {item.station}
-                </Text>
-              </View>
+              <Pressable
+                onPress={() => navigation.navigate('MenuItemForm', { itemId: item.id })}
+                style={styles.rowMain}
+              >
+                {item.image_url ? (
+                  <Image source={{ uri: item.image_url }} style={styles.thumb} />
+                ) : (
+                  <View style={styles.thumbPlaceholder} />
+                )}
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={[styles.name, { color: item.available ? kitchen.text : kitchen.textFaint }]}>{item.name}</Text>
+                  <Text style={styles.meta}>
+                    {money(item.price_cents)} · {margin}% margin · {item.station}
+                  </Text>
+                </View>
+              </Pressable>
               <Pressable
                 onPress={() => toggleItemAvailable(item.id)}
                 style={[
@@ -94,9 +115,15 @@ const styles = StyleSheet.create({
   tabs: { paddingHorizontal: 16, paddingTop: 14, gap: 8 },
   tab: { height: 44, paddingHorizontal: 15, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   tabLabel: { fontFamily: type.display, fontWeight: '600', fontSize: 13 },
-  summary: { fontFamily: type.display, fontWeight: '500', fontSize: 12, lineHeight: 17, color: kitchen.textFaint, paddingHorizontal: 16, paddingTop: 14 },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingHorizontal: 16, paddingTop: 14 },
+  summary: { flex: 1, fontFamily: type.display, fontWeight: '500', fontSize: 12, lineHeight: 17, color: kitchen.textFaint },
+  addBtn: { height: 36, paddingHorizontal: 13, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: kitchen.accent },
+  addBtnLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 12, color: '#191510' },
   list: { padding: 16, gap: 8 },
   row: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, backgroundColor: kitchen.surface, borderWidth: 1 },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  thumb: { width: 44, height: 44, borderRadius: 10 },
+  thumbPlaceholder: { width: 44, height: 44, borderRadius: 10, backgroundColor: kitchen.borderSoft },
   name: { fontFamily: type.display, fontWeight: '600', fontSize: 15 },
   meta: { fontFamily: type.mono, fontWeight: '500', fontSize: 11, letterSpacing: 0.4, color: kitchen.textFaint },
   toggleTrack: { width: 64, height: 36, borderRadius: 99, borderWidth: 1, padding: 3, flexDirection: 'row' },

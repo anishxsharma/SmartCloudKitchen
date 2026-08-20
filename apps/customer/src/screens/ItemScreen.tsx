@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
@@ -26,9 +26,13 @@ export function ItemScreen() {
         <Text style={styles.back}>← MENU</Text>
       </Pressable>
 
-      <View style={styles.hero}>
-        <Text style={styles.heroLabel}>hero food shot 4:3</Text>
-      </View>
+      {item.image_url ? (
+        <Image source={{ uri: item.image_url }} style={styles.hero} />
+      ) : (
+        <View style={styles.hero}>
+          <Text style={styles.heroLabel}>hero food shot 4:3</Text>
+        </View>
+      )}
 
       <View style={{ gap: 8 }}>
         <Text style={styles.name}>{item.name}</Text>

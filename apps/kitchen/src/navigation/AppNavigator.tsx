@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
@@ -8,10 +9,21 @@ import { useKitchenStore } from '../store/kitchenStore';
 import { SignInScreen } from '../screens/SignInScreen';
 import { QueueScreen } from '../screens/QueueScreen';
 import { MenuScreen } from '../screens/MenuScreen';
+import { MenuItemFormScreen } from '../screens/MenuItemFormScreen';
 import { StockScreen } from '../screens/StockScreen';
 import { SalesScreen } from '../screens/SalesScreen';
 
 const Tab = createBottomTabNavigator();
+const MenuStack = createNativeStackNavigator();
+
+function MenuStackNavigator() {
+  return (
+    <MenuStack.Navigator screenOptions={{ headerShown: false }}>
+      <MenuStack.Screen name="MenuList" component={MenuScreen} />
+      <MenuStack.Screen name="MenuItemForm" component={MenuItemFormScreen} />
+    </MenuStack.Navigator>
+  );
+}
 
 function TabBar({ state, navigation }: any) {
   const labels: Record<string, string> = { Queue: 'Queue', Menu: 'Menu', Stock: 'Stock', Sales: 'Sales' };
@@ -60,7 +72,7 @@ function SignedInTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
       <Tab.Screen name="Queue" component={QueueScreen} />
-      {canManage ? <Tab.Screen name="Menu" component={MenuScreen} /> : null}
+      {canManage ? <Tab.Screen name="Menu" component={MenuStackNavigator} /> : null}
       {canManage ? <Tab.Screen name="Stock" component={StockScreen} /> : null}
       {canManage ? <Tab.Screen name="Sales" component={SalesScreen} /> : null}
     </Tab.Navigator>

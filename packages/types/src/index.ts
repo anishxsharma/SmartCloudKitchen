@@ -31,6 +31,7 @@ export interface MenuItem {
   prep_minutes: number;
   available: boolean;
   description?: string | null;
+  image_url?: string | null;
 }
 
 export interface StockItem {
@@ -96,4 +97,13 @@ export interface OrderLine {
 /** Order with its lines eager-loaded — the shape both apps actually render. */
 export interface OrderWithLines extends Order {
   lines: OrderLine[];
+}
+
+export interface OrderFeedback {
+  id: string;
+  order_id: string;
+  customer_id: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
 }

@@ -1,7 +1,14 @@
 import { create } from 'zustand';
-import { fetchBrands, fetchMenuItems, fetchOrder, insertDirectOrder } from '@smartcloudkitchen/api-client';
+import {
+  fetchBrands,
+  fetchFeedbackForOrder,
+  fetchMenuItems,
+  fetchOrder,
+  insertDirectOrder,
+  submitFeedback,
+} from '@smartcloudkitchen/api-client';
 import { CUSTOMER_LOCATION_ID } from '@smartcloudkitchen/mock-data';
-import type { Brand, MenuItem, Order, OrderLine } from '@smartcloudkitchen/types';
+import type { Brand, MenuItem, Order, OrderFeedback, OrderLine } from '@smartcloudkitchen/types';
 
 export interface CartLine {
   menuItemId: string;
@@ -26,6 +33,9 @@ interface CustomerState {
   lines: OrderLine[];
   trackOrderId: string | null;
   placingOrder: boolean;
+  feedback: OrderFeedback | null;
+  feedbackLoading: boolean;
+  feedbackSubmitting: boolean;
   /** Set once usePushRegistration resolves — see App.tsx. */
   pushToken: string | null;
 
@@ -42,6 +52,8 @@ interface CustomerState {
   cartDec: (menuItemId: string) => void;
   placeOrder: () => Promise<void>;
   onTrackedOrderChange: (order: Order) => void;
+  checkFeedback: (orderId: string) => Promise<void>;
+  submitOrderFeedback: (rating: number, comment: string | null) => Promise<void>;
 }
 
 export const useCustomerStore = create<CustomerState>((set, get) => ({
@@ -58,6 +70,9 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   lines: [],
   trackOrderId: null,
   placingOrder: false,
+  feedback: null,
+  feedbackLoading: false,
+  feedbackSubmitting: false,
   pushToken: null,
 
   tick: () => set({ now: Date.now() }),
@@ -129,6 +144,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         cart: [],
         trackOrderId: id,
         placingOrder: false,
+        feedback: null,
       }));
     } catch (err) {
       set({ placingOrder: false, error: err instanceof Error ? err.message : String(err) });
@@ -138,4 +154,30 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   /** Fed by subscribeToOrder in TrackScreen — a real update from the kitchen app. */
   onTrackedOrderChange: (order) =>
     set((s) => ({ orders: s.orders.map((o) => (o.id === order.id ? { ...o, ...order } : o)) })),
+
+  /** Called once an order reaches "picked" — avoids re-prompting if this device already rated it. */
+  checkFeedback: async (orderId) => {
+    set({ feedbackLoading: true });
+    try {
+      const feedback = await fetchFeedbackForOrder(orderId);
+      set({ feedback, feedbackLoading: false });
+    } catch {
+      set({ feedbackLoading: false });
+    }
+  },
+
+  submitOrderFeedback: async (rating, comment) => {
+    const { trackOrderId } = get();
+    if (!trackOrderId) return;
+    set({ feedbackSubmitting: true, error: null });
+    try {
+      await submitFeedback(trackOrderId, rating, comment);
+      set({
+        feedbackSubmitting: false,
+        feedback: { id: '', order_id: trackOrderId, customer_id: null, rating, comment, created_at: new Date().toISOString() },
+      });
+    } catch (err) {
+      set({ feedbackSubmitting: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  },
 }));

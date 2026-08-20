@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
@@ -75,9 +75,13 @@ export function BrowseScreen() {
               }}
               style={[styles.card, { opacity: item.available ? 1 : 0.45 }]}
             >
-              <View style={styles.photo}>
-                <Text style={styles.photoLabel}>food shot</Text>
-              </View>
+              {item.image_url ? (
+                <Image source={{ uri: item.image_url }} style={styles.photo} />
+              ) : (
+                <View style={styles.photo}>
+                  <Text style={styles.photoLabel}>food shot</Text>
+                </View>
+              )}
               <View style={{ flex: 1, gap: 5, paddingTop: 2 }}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
