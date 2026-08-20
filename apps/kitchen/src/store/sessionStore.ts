@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchMyStaff, signInStaff, signOutStaff } from '@smartcloudkitchen/api-client';
+import { consumeInviteSession, fetchMyStaff, setOwnPassword, signInStaff, signOutStaff } from '@smartcloudkitchen/api-client';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { Staff } from '@smartcloudkitchen/types';
 
@@ -15,11 +15,15 @@ interface SessionState {
   error: string | null;
   /** Owner-only location picker. null = "every location in the org". */
   selectedLocationId: string | null;
+  /** True once an invite deep link's tokens have been exchanged for a session but before the new hire has set their own password. */
+  awaitingNewPassword: boolean;
 
   bootstrap: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   selectLocation: (locationId: string | null) => void;
+  beginPasswordSetup: (accessToken: string, refreshToken: string) => Promise<void>;
+  completePasswordSetup: (password: string) => Promise<void>;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -27,6 +31,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   loading: true,
   error: null,
   selectedLocationId: null,
+  awaitingNewPassword: false,
 
   bootstrap: async () => {
     try {
@@ -54,6 +59,27 @@ export const useSessionStore = create<SessionState>((set) => ({
   },
 
   selectLocation: (locationId) => set({ selectedLocationId: locationId }),
+
+  beginPasswordSetup: async (accessToken, refreshToken) => {
+    set({ loading: true, error: null });
+    try {
+      await consumeInviteSession(accessToken, refreshToken);
+      set({ awaitingNewPassword: true, loading: false });
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
+  completePasswordSetup: async (password) => {
+    set({ loading: true, error: null });
+    try {
+      await setOwnPassword(password);
+      const staff = await fetchMyStaff();
+      set({ staff, loading: false, awaitingNewPassword: false });
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  },
 }));
 
 export function useCurrentStaff(): Staff | null {

@@ -39,8 +39,9 @@ Business
 
 ## Data safety form
 - Collected: staff email (for sign-in), which location/role an account
-  is scoped to, and the same order data the customer app collects
-  (staff can view/manage it)
+  is scoped to, the same order data the customer app collects (staff
+  can view/manage it), and photos — staff can attach a dish photo when
+  editing a menu item, uploaded to Supabase Storage
 - Not collected: payment info, advertising ID, precise location
 - Shared with third parties: no
 - Encrypted in transit: yes (HTTPS/TLS to Supabase)

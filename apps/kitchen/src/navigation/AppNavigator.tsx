@@ -7,11 +7,14 @@ import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { canManageMenuAndStock, useCurrentStaff, useSessionStore, useVisibleLocationIds } from '../store/sessionStore';
 import { useKitchenStore } from '../store/kitchenStore';
 import { SignInScreen } from '../screens/SignInScreen';
+import { SetPasswordScreen } from '../screens/SetPasswordScreen';
 import { QueueScreen } from '../screens/QueueScreen';
 import { MenuScreen } from '../screens/MenuScreen';
 import { MenuItemFormScreen } from '../screens/MenuItemFormScreen';
 import { StockScreen } from '../screens/StockScreen';
 import { SalesScreen } from '../screens/SalesScreen';
+import { StaffScreen } from '../screens/StaffScreen';
+import { useInviteDeepLink } from '../hooks/useInviteDeepLink';
 
 const Tab = createBottomTabNavigator();
 const MenuStack = createNativeStackNavigator();
@@ -26,7 +29,7 @@ function MenuStackNavigator() {
 }
 
 function TabBar({ state, navigation }: any) {
-  const labels: Record<string, string> = { Queue: 'Queue', Menu: 'Menu', Stock: 'Stock', Sales: 'Sales' };
+  const labels: Record<string, string> = { Queue: 'Queue', Menu: 'Menu', Stock: 'Stock', Sales: 'Sales', Staff: 'Staff' };
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
@@ -75,18 +78,26 @@ function SignedInTabs() {
       {canManage ? <Tab.Screen name="Menu" component={MenuStackNavigator} /> : null}
       {canManage ? <Tab.Screen name="Stock" component={StockScreen} /> : null}
       {canManage ? <Tab.Screen name="Sales" component={SalesScreen} /> : null}
+      {canManage ? <Tab.Screen name="Staff" component={StaffScreen} /> : null}
     </Tab.Navigator>
   );
 }
 
 export function AppNavigator() {
+  useInviteDeepLink();
+
   const staff = useCurrentStaff();
   const bootstrapping = useSessionStore((s) => s.loading);
+  const awaitingNewPassword = useSessionStore((s) => s.awaitingNewPassword);
   const bootstrap = useSessionStore((s) => s.bootstrap);
 
   useEffect(() => {
     bootstrap();
   }, [bootstrap]);
+
+  if (awaitingNewPassword) {
+    return <SetPasswordScreen />;
+  }
 
   if (!staff) {
     if (bootstrapping) {

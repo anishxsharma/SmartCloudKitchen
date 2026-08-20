@@ -3,55 +3,55 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import { kitchen, minTapTarget, type } from '@smartcloudkitchen/design-tokens';
 import { useSessionStore } from '../store/sessionStore';
 
-export function SignInScreen() {
-  const [email, setEmail] = useState('');
+export function SetPasswordScreen() {
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const loading = useSessionStore((s) => s.loading);
   const error = useSessionStore((s) => s.error);
-  const signIn = useSessionStore((s) => s.signIn);
+  const completePasswordSetup = useSessionStore((s) => s.completePasswordSetup);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !loading;
+  const mismatch = confirm.length > 0 && password !== confirm;
+  const canSubmit = password.length >= 8 && password === confirm && !loading;
 
   return (
     <View style={styles.wrap}>
       <View style={{ gap: 6, marginBottom: 32 }}>
-        <Text style={styles.eyebrow}>SMARTCLOUDKITCHEN</Text>
-        <Text style={styles.title}>Sign in for this shift</Text>
+        <Text style={styles.eyebrow}>WELCOME TO SMARTCLOUDKITCHEN</Text>
+        <Text style={styles.title}>Set your password</Text>
       </View>
 
       <View style={{ gap: 12, width: '100%' }}>
         <TextInput
           style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@smartcloudkitchen.com"
+          value={password}
+          onChangeText={setPassword}
+          placeholder="New password (min 8 characters)"
           placeholderTextColor={kitchen.textFaint}
           autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
+          secureTextEntry
           editable={!loading}
         />
         <TextInput
           style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
+          value={confirm}
+          onChangeText={setConfirm}
+          placeholder="Confirm password"
           placeholderTextColor={kitchen.textFaint}
           autoCapitalize="none"
-          autoComplete="password"
           secureTextEntry
           editable={!loading}
         />
 
         <Pressable
           disabled={!canSubmit}
-          onPress={() => signIn(email.trim(), password)}
-          style={[styles.signInBtn, !canSubmit && { opacity: 0.5 }]}
+          onPress={() => completePasswordSetup(password)}
+          style={[styles.submitBtn, !canSubmit && { opacity: 0.5 }]}
         >
-          {loading ? <ActivityIndicator color="#191510" /> : <Text style={styles.signInLabel}>Sign in</Text>}
+          {loading ? <ActivityIndicator color="#191510" /> : <Text style={styles.submitLabel}>Set password &amp; sign in</Text>}
         </Pressable>
       </View>
 
+      {mismatch ? <Text style={styles.error}>Passwords don't match</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: type.mono, fontWeight: '600', fontSize: 11, letterSpacing: 2.2, color: kitchen.accent, textAlign: 'center' },
   title: { fontFamily: type.display, fontWeight: '700', fontSize: 22, color: kitchen.text, textAlign: 'center' },
   input: { minHeight: minTapTarget, borderRadius: 12, borderWidth: 1, borderColor: kitchen.borderSoft, backgroundColor: kitchen.surface, paddingHorizontal: 14, color: kitchen.text, fontFamily: type.display, fontSize: 15 },
-  signInBtn: { minHeight: minTapTarget, borderRadius: 14, backgroundColor: kitchen.accent, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  signInLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 16, color: '#191510' },
+  submitBtn: { minHeight: minTapTarget, borderRadius: 14, backgroundColor: kitchen.accent, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  submitLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 15, color: '#191510' },
   error: { marginTop: 20, fontFamily: type.display, fontSize: 12, color: kitchen.warn, textAlign: 'center' },
 });
