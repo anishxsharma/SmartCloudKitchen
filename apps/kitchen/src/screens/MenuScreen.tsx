@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BRANDS, LOCATIONS } from '@smartcloudkitchen/mock-data';
+import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
@@ -8,10 +8,9 @@ import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function MenuScreen() {
-  const { items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore();
+  const { brands: scopedBrands, items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore();
   const visibleLocationIds = useVisibleLocationIds();
 
-  const scopedBrands = BRANDS.filter((b) => visibleLocationIds.includes(b.location_id));
   const locationLabel =
     visibleLocationIds.length === 1
       ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')

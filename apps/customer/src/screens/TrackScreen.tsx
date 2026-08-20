@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { subscribeToOrder } from '@smartcloudkitchen/api-client';
 import type { Order, OrderStage } from '@smartcloudkitchen/types';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
@@ -14,12 +15,8 @@ const STEP_DEFS = [
   { label: 'On the way', note: 'arriving shortly' },
 ];
 
-// Demo-only cadence for advanceTrackedOrder — a live Supabase link replaces
-// this with a realtime subscription to the kitchen's own stage updates.
-const DEMO_ADVANCE_MS = 15_000;
-
 export function TrackScreen() {
-  const { orders, trackOrderId, now, tick, advanceTrackedOrder } = useCustomerStore();
+  const { orders, trackOrderId, now, tick, onTrackedOrderChange } = useCustomerStore();
   const order = orders.find((o) => o.id === trackOrderId) ?? null;
 
   useEffect(() => {
@@ -27,11 +24,13 @@ export function TrackScreen() {
     return () => clearInterval(id);
   }, [tick]);
 
+  // The real thing: this is a genuine realtime subscription to the
+  // kitchen app's own Postgres row — when a cook bumps this ticket on a
+  // different device, that update lands here directly.
   useEffect(() => {
-    if (!order || order.stage === 'picked') return;
-    const id = setInterval(advanceTrackedOrder, DEMO_ADVANCE_MS);
-    return () => clearInterval(id);
-  }, [order?.id, order?.stage, advanceTrackedOrder]);
+    if (!trackOrderId) return;
+    return subscribeToOrder(trackOrderId, onTrackedOrderChange);
+  }, [trackOrderId, onTrackedOrderChange]);
 
   return (
     <View style={{ flex: 1, backgroundColor: customer.bg }}>

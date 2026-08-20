@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
@@ -7,7 +7,7 @@ import { Header } from '../components/Header';
 
 export function CartScreen() {
   const navigation = useNavigation<any>();
-  const { cart, cartInc, cartDec, placeOrder } = useCustomerStore();
+  const { cart, cartInc, cartDec, placeOrder, placingOrder, error } = useCustomerStore();
 
   const sub = cart.reduce((a, c) => a + c.priceCents * c.qty, 0);
   const fee = cart.length ? 3900 : 0;
@@ -65,14 +65,20 @@ export function CartScreen() {
                   <Text style={styles.billTotalValue}>{money(total)}</Text>
                 </View>
               </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
               <Pressable
-                onPress={() => {
-                  placeOrder();
-                  navigation.getParent()?.navigate('Orders');
+                disabled={placingOrder}
+                onPress={async () => {
+                  await placeOrder();
+                  if (useCustomerStore.getState().trackOrderId) navigation.getParent()?.navigate('Orders');
                 }}
-                style={styles.cta}
+                style={[styles.cta, placingOrder && { opacity: 0.6 }]}
               >
-                <Text style={styles.ctaLabel}>Place order · {money(total)}</Text>
+                {placingOrder ? (
+                  <ActivityIndicator color={customer.ctaFg} />
+                ) : (
+                  <Text style={styles.ctaLabel}>Place order · {money(total)}</Text>
+                )}
               </Pressable>
             </View>
           ) : null
@@ -100,6 +106,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: '#EDE4D5', marginVertical: 4 },
   billTotalLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 17, color: customer.text },
   billTotalValue: { fontFamily: type.mono, fontWeight: '700', fontSize: 17, color: customer.text },
+  errorText: { fontFamily: type.display, fontWeight: '500', fontSize: 12, color: '#C0472A', textAlign: 'center' },
   cta: { minHeight: 62, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: customer.ctaBg },
   ctaLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 16, color: customer.ctaFg },
 });

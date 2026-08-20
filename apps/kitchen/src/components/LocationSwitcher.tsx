@@ -8,7 +8,7 @@ export function LocationSwitcher() {
   const staff = useCurrentStaff();
   const selected = useSessionStore((s) => s.selectedLocationId);
   const selectLocation = useSessionStore((s) => s.selectLocation);
-  if (staff.role !== 'owner') return null;
+  if (staff?.role !== 'owner') return null;
 
   const orgLocations = LOCATIONS.filter((l) => l.org_id === staff.org_id);
 

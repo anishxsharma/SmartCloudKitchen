@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { BRANDS, MENU_ITEMS } from '@smartcloudkitchen/mock-data';
-import { nextStage } from '@smartcloudkitchen/domain';
-import type { Order, OrderLine } from '@smartcloudkitchen/types';
+import { fetchBrands, fetchMenuItems, fetchOrder, insertDirectOrder } from '@smartcloudkitchen/api-client';
+import { CUSTOMER_LOCATION_ID } from '@smartcloudkitchen/mock-data';
+import type { Brand, MenuItem, Order, OrderLine } from '@smartcloudkitchen/types';
 
 export interface CartLine {
   menuItemId: string;
@@ -14,6 +14,10 @@ export interface CartLine {
 
 interface CustomerState {
   now: number;
+  loading: boolean;
+  error: string | null;
+  brands: Brand[];
+  items: MenuItem[];
   shopBrandId: string;
   itemId: string | null;
   qty: number;
@@ -21,12 +25,13 @@ interface CustomerState {
   orders: Order[];
   lines: OrderLine[];
   trackOrderId: string | null;
-  seq: number;
+  placingOrder: boolean;
   /** Set once usePushRegistration resolves — see App.tsx. */
   pushToken: string | null;
 
   tick: () => void;
   setPushToken: (token: string) => void;
+  loadCatalog: () => Promise<void>;
   setShopBrand: (brandId: string) => void;
   openItem: (itemId: string) => void;
   backToBrowse: () => void;
@@ -35,26 +40,40 @@ interface CustomerState {
   addToCart: () => void;
   cartInc: (menuItemId: string) => void;
   cartDec: (menuItemId: string) => void;
-  placeOrder: () => void;
-  /** Demo-only: simulates the kitchen bumping the ticket, since there's no
-   * live Supabase link yet to receive the real update from the kitchen app. */
-  advanceTrackedOrder: () => void;
+  placeOrder: () => Promise<void>;
+  onTrackedOrderChange: (order: Order) => void;
 }
 
 export const useCustomerStore = create<CustomerState>((set, get) => ({
   now: Date.now(),
-  shopBrandId: 'b-curry',
+  loading: true,
+  error: null,
+  brands: [],
+  items: [],
+  shopBrandId: '',
   itemId: null,
   qty: 1,
   cart: [],
   orders: [],
   lines: [],
   trackOrderId: null,
-  seq: 1047,
+  placingOrder: false,
   pushToken: null,
 
   tick: () => set({ now: Date.now() }),
   setPushToken: (pushToken) => set({ pushToken }),
+
+  loadCatalog: async () => {
+    set({ loading: true, error: null });
+    try {
+      const brands = await fetchBrands([CUSTOMER_LOCATION_ID]);
+      const items = await fetchMenuItems(brands.map((b) => b.id));
+      set((s) => ({ brands, items, loading: false, shopBrandId: s.shopBrandId || (brands[0]?.id ?? '') }));
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
   setShopBrand: (shopBrandId) => set({ shopBrandId }),
   openItem: (itemId) => set({ itemId, qty: 1 }),
   backToBrowse: () => set({ itemId: null }),
@@ -62,10 +81,10 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   decQty: () => set((s) => ({ qty: Math.max(1, s.qty - 1) })),
 
   addToCart: () => {
-    const { itemId, qty, cart } = get();
-    const item = MENU_ITEMS.find((i) => i.id === itemId);
+    const { itemId, qty, cart, items, brands } = get();
+    const item = items.find((i) => i.id === itemId);
     if (!item) return;
-    const brand = BRANDS.find((b) => b.id === item.brand_id);
+    const brand = brands.find((b) => b.id === item.brand_id);
     const existing = cart.find((c) => c.menuItemId === item.id);
     const nextCart = existing
       ? cart.map((c) => (c.menuItemId === item.id ? { ...c, qty: c.qty + qty } : c))
@@ -87,48 +106,36 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       }),
     })),
 
-  placeOrder: () => {
-    const { cart, seq } = get();
+  placeOrder: async () => {
+    const { cart, items } = get();
     if (!cart.length) return;
-    const orderId = `local-${seq}`;
-    const firstBrandId = MENU_ITEMS.find((i) => i.id === cart[0].menuItemId)?.brand_id ?? 'b-curry';
-    const order: Order = {
-      id: orderId,
-      location_id: 'loc1',
-      brand_id: firstBrandId,
-      customer_id: null,
-      channel: 'direct',
-      external_ref: null,
-      code: '#' + seq,
-      stage: 'new',
-      promise_minutes: 16,
-      placed_at: new Date().toISOString(),
-      delivery_address_id: null,
-      note: 'Direct app order · contactless drop.',
-    };
-    const lines: OrderLine[] = cart.map((c, idx) => ({
-      id: `${orderId}-l${idx}`,
-      order_id: orderId,
-      menu_item_id: c.menuItemId,
-      qty: c.qty,
-      note: null,
-      done: false,
-    }));
-    set((s) => ({
-      orders: [order, ...s.orders],
-      lines: [...lines, ...s.lines],
-      cart: [],
-      seq: s.seq + 1,
-      trackOrderId: orderId,
-    }));
+    const brandId = items.find((i) => i.id === cart[0].menuItemId)?.brand_id;
+    if (!brandId) return;
+
+    set({ placingOrder: true, error: null });
+    try {
+      const { id } = await insertDirectOrder({
+        locationId: CUSTOMER_LOCATION_ID,
+        brandId,
+        customerId: null, // no phone-OTP auth yet — see the build plan's Auth section
+        promiseMinutes: 16,
+        note: 'Direct app order · contactless drop.',
+        lines: cart.map((c) => ({ menuItemId: c.menuItemId, qty: c.qty })),
+      });
+      const full = await fetchOrder(id);
+      set((s) => ({
+        orders: full ? [full, ...s.orders] : s.orders,
+        lines: full ? [...full.lines, ...s.lines] : s.lines,
+        cart: [],
+        trackOrderId: id,
+        placingOrder: false,
+      }));
+    } catch (err) {
+      set({ placingOrder: false, error: err instanceof Error ? err.message : String(err) });
+    }
   },
 
-  advanceTrackedOrder: () => {
-    const { trackOrderId, orders } = get();
-    const order = orders.find((o) => o.id === trackOrderId);
-    if (!order || order.stage === 'picked') return;
-    set((s) => ({
-      orders: s.orders.map((o) => (o.id === trackOrderId ? { ...o, stage: nextStage(o.stage) } : o)),
-    }));
-  },
+  /** Fed by subscribeToOrder in TrackScreen — a real update from the kitchen app. */
+  onTrackedOrderChange: (order) =>
+    set((s) => ({ orders: s.orders.map((o) => (o.id === order.id ? { ...o, ...order } : o)) })),
 }));

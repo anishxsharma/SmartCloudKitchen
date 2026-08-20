@@ -1,14 +1,13 @@
 import { useNavigation } from '@react-navigation/native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { MENU_ITEMS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
 
 export function ItemScreen() {
   const navigation = useNavigation<any>();
-  const { itemId, qty, incQty, decQty, addToCart } = useCustomerStore();
-  const item = MENU_ITEMS.find((i) => i.id === itemId);
+  const { items, itemId, qty, incQty, decQty, addToCart } = useCustomerStore();
+  const item = items.find((i) => i.id === itemId);
   if (!item) return null;
 
   return (

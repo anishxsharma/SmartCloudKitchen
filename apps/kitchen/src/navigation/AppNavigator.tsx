@@ -1,8 +1,11 @@
+import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
-import { canManageMenuAndStock, useCurrentStaff } from '../store/sessionStore';
+import { canManageMenuAndStock, useCurrentStaff, useSessionStore, useVisibleLocationIds } from '../store/sessionStore';
+import { useKitchenStore } from '../store/kitchenStore';
+import { SignInScreen } from '../screens/SignInScreen';
 import { QueueScreen } from '../screens/QueueScreen';
 import { MenuScreen } from '../screens/MenuScreen';
 import { StockScreen } from '../screens/StockScreen';
@@ -32,13 +35,19 @@ function TabBar({ state, navigation }: any) {
   );
 }
 
-export function AppNavigator() {
+function SignedInTabs() {
   // Line cooks work the queue; menu/stock/sales are manager+owner
   // decisions — mirrors the manager_update_menu_items / manager_update_stock
   // RLS policies, so the app's gating matches what the database would
   // reject anyway rather than inventing its own rule.
   const staff = useCurrentStaff();
   const canManage = canManageMenuAndStock(staff);
+  const visibleLocationIds = useVisibleLocationIds();
+  const loadForLocations = useKitchenStore((s) => s.loadForLocations);
+
+  useEffect(() => {
+    loadForLocations(visibleLocationIds);
+  }, [visibleLocationIds.join(','), loadForLocations]);
 
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
@@ -48,6 +57,29 @@ export function AppNavigator() {
       {canManage ? <Tab.Screen name="Sales" component={SalesScreen} /> : null}
     </Tab.Navigator>
   );
+}
+
+export function AppNavigator() {
+  const staff = useCurrentStaff();
+  const bootstrapping = useSessionStore((s) => s.loading);
+  const bootstrap = useSessionStore((s) => s.bootstrap);
+
+  useEffect(() => {
+    bootstrap();
+  }, [bootstrap]);
+
+  if (!staff) {
+    if (bootstrapping) {
+      return (
+        <View style={{ flex: 1, backgroundColor: kitchen.bg, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={kitchen.accent} />
+        </View>
+      );
+    }
+    return <SignInScreen />;
+  }
+
+  return <SignedInTabs />;
 }
 
 const styles = StyleSheet.create({

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { BRANDS, LOCATIONS } from '@smartcloudkitchen/mock-data';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { OrderStage } from '@smartcloudkitchen/types';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
@@ -22,7 +22,7 @@ export function QueueScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_BREAKPOINT;
 
-  const { orders, lines, items, now, filter, selectedOrderId, tick, setFilter, selectOrder, advanceOrder, toggleLineDone } =
+  const { brands, orders, lines, items, now, loading, error, filter, selectedOrderId, tick, setFilter, selectOrder, advanceOrder, toggleLineDone } =
     useKitchenStore();
   const visibleLocationIds = useVisibleLocationIds();
 
@@ -31,10 +31,10 @@ export function QueueScreen() {
     return () => clearInterval(id);
   }, [tick]);
 
-  const brandName = (brandId: string) => BRANDS.find((b) => b.id === brandId)?.name ?? brandId;
+  const brandName = (brandId: string) => brands.find((b) => b.id === brandId)?.name ?? brandId;
 
   const scopedOrders = orders.filter((o) => visibleLocationIds.includes(o.location_id));
-  const brandCount = BRANDS.filter((b) => visibleLocationIds.includes(b.location_id)).length;
+  const brandCount = brands.length;
   const locationLabel =
     visibleLocationIds.length === 1
       ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
@@ -81,7 +81,15 @@ export function QueueScreen() {
         })}
       </View>
 
-      {visible.length === 0 ? (
+      {error ? (
+        <View style={styles.empty}>
+          <Text style={[styles.emptyText, { color: kitchen.warn }]}>{error}</Text>
+        </View>
+      ) : loading ? (
+        <View style={styles.empty}>
+          <ActivityIndicator color={kitchen.accent} />
+        </View>
+      ) : visible.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>Nothing on this rail. All caught up.</Text>
         </View>
