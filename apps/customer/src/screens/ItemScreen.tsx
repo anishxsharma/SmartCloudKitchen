@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
+import { useShallow } from 'zustand/react/shallow';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
@@ -6,7 +7,16 @@ import { useCustomerStore } from '../store/customerStore';
 
 export function ItemScreen() {
   const navigation = useNavigation<any>();
-  const { items, itemId, qty, incQty, decQty, addToCart } = useCustomerStore();
+  const { items, itemId, qty, incQty, decQty, addToCart } = useCustomerStore(
+    useShallow((s) => ({
+      items: s.items,
+      itemId: s.itemId,
+      qty: s.qty,
+      incQty: s.incQty,
+      decQty: s.decQty,
+      addToCart: s.addToCart,
+    }))
+  );
   const item = items.find((i) => i.id === itemId);
   if (!item) return null;
 

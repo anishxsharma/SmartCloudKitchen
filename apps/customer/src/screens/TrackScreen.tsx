@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { subscribeToOrder } from '@smartcloudkitchen/api-client';
 import type { Order, OrderStage } from '@smartcloudkitchen/types';
@@ -16,13 +17,26 @@ const STEP_DEFS = [
 ];
 
 export function TrackScreen() {
-  const { orders, trackOrderId, now, tick, onTrackedOrderChange } = useCustomerStore();
+  const { orders, trackOrderId, now, tick, onTrackedOrderChange } = useCustomerStore(
+    useShallow((s) => ({
+      orders: s.orders,
+      trackOrderId: s.trackOrderId,
+      now: s.now,
+      tick: s.tick,
+      onTrackedOrderChange: s.onTrackedOrderChange,
+    }))
+  );
   const order = orders.find((o) => o.id === trackOrderId) ?? null;
 
+  // Only tick while there's actually something to track — otherwise this
+  // stays mounted via bottom-tabs and updates `now` every second for the
+  // rest of the session for no visible reason (the empty state doesn't
+  // use it).
   useEffect(() => {
+    if (!trackOrderId) return;
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [tick]);
+  }, [trackOrderId, tick]);
 
   // The real thing: this is a genuine realtime subscription to the
   // kitchen app's own Postgres row — when a cook bumps this ticket on a

@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
+import { useShallow } from 'zustand/react/shallow';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
@@ -7,7 +8,16 @@ import { Header } from '../components/Header';
 
 export function CartScreen() {
   const navigation = useNavigation<any>();
-  const { cart, cartInc, cartDec, placeOrder, placingOrder, error } = useCustomerStore();
+  const { cart, cartInc, cartDec, placeOrder, placingOrder, error } = useCustomerStore(
+    useShallow((s) => ({
+      cart: s.cart,
+      cartInc: s.cartInc,
+      cartDec: s.cartDec,
+      placeOrder: s.placeOrder,
+      placingOrder: s.placingOrder,
+      error: s.error,
+    }))
+  );
 
   const sub = cart.reduce((a, c) => a + c.priceCents * c.qty, 0);
   const fee = cart.length ? 3900 : 0;

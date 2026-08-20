@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { useShallow } from 'zustand/react/shallow';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
@@ -8,7 +9,22 @@ import { Header } from '../components/Header';
 
 export function BrowseScreen() {
   const navigation = useNavigation<any>();
-  const { brands, items, loading, error, shopBrandId, setShopBrand, openItem, loadCatalog } = useCustomerStore();
+  // Selector (not the bare store hook) so this screen only re-renders on
+  // its own slice — it stays mounted via bottom-tabs even off-screen, and
+  // TrackScreen's 1s tick was re-rendering it (and Item/Cart) needlessly
+  // every second for the whole session.
+  const { brands, items, loading, error, shopBrandId, setShopBrand, openItem, loadCatalog } = useCustomerStore(
+    useShallow((s) => ({
+      brands: s.brands,
+      items: s.items,
+      loading: s.loading,
+      error: s.error,
+      shopBrandId: s.shopBrandId,
+      setShopBrand: s.setShopBrand,
+      openItem: s.openItem,
+      loadCatalog: s.loadCatalog,
+    }))
+  );
   const brandItems = items.filter((i) => i.brand_id === shopBrandId);
 
   useEffect(() => {
