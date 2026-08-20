@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0C0B09;font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#FFB020}a:hover{color:#FFC658}
+*{box-sizing:border-box}
+::-webkit-scrollbar{width:0;height:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="display:flex;gap:44px;padding:44px;align-items:flex-start;min-height:100vh;background:#0C0B09">
+
+  <div style="width:330px;flex:none;color:#EDE7DC;display:flex;flex-direction:column;gap:26px;padding-top:6px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#FFB020">SMARTCLOUDKITCHEN</div>
+      <div style="font:700 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em">Back of house<br>meets storefront</div>
+      <div style="font:400 13.5px/1.6 Archivo,sans-serif;color:#A39A8C;text-wrap:pretty">One app, two faces. A dark, glove-friendly kitchen console for the line and operator, and a warm ordering storefront for guests. They share live state: place an order on the storefront and it lands in the queue.</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6F675C">ASSUMPTIONS</div>
+      <div style="font:400 12.5px/1.55 Archivo,sans-serif;color:#A39A8C">Four virtual brands out of one kitchen · orders arrive from two aggregators plus direct · a promise clock per ticket drives every colour on screen · staff wear gloves, so nothing smaller than 56px is tappable · the console is dark to survive glare and greasy screens.</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6F675C">SCREENS</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <sc-for list="{{ screenLinks }}" as="s" hint-placeholder-count="9">
+          <div onClick="{{ s.onClick }}" style="cursor:pointer;padding:8px 11px;border-radius:8px;font:500 12px/1 Archivo,sans-serif;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:9px;border-top:1px solid #26221C;padding-top:20px">
+      <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6F675C">TRY THIS</div>
+      <div style="font:400 12.5px/1.6 Archivo,sans-serif;color:#A39A8C">Bump a ticket through Start → Ready. 86 an item on Menu, then look for it in the storefront. Order from the storefront and watch it appear at the top of the queue — then bump it and watch the guest's tracker move.</div>
+    </div>
+  </div>
+
+  <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ isKitchen }}" hint-size="412px,892px">
+
+    <sc-if value="{{ isKitchen }}" hint-placeholder-val="{{ true }}">
+      <div style="height:100%;display:flex;flex-direction:column;background:#14120F;color:#F5F0E8;font-family:Archivo,sans-serif">
+
+        <div style="flex:none;padding:12px 16px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2A251E;background:#14120F">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="font:700 19px/1 Archivo,sans-serif;letter-spacing:-.01em">{{ kitchenTitle }}</div>
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#A39A8C;letter-spacing:.06em">{{ kitchenSub }}</div>
+          </div>
+          <div onClick="{{ toStorefront }}" style="cursor:pointer;display:flex;align-items:center;gap:7px;height:40px;padding:0 14px;border-radius:999px;border:1px solid #3A342B;background:#1F1C17;font:600 12px/1 Archivo,sans-serif;color:#EDE7DC">Storefront</div>
+        </div>
+
+        <div style="flex:1;overflow:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:14px">
+
+          <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <sc-if value="{{ showInsight }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:12px;padding:14px;border-radius:14px;background:#231D12;border:1px solid #4A3A18">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#FFB020;margin-top:6px;flex:none;animation:pulse 2s infinite"></div>
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <div style="font:700 13px/1.2 Archivo,sans-serif;color:#FFB020">Surge in 40 min</div>
+                    <div style="font:400 12.5px/1.5 Archivo,sans-serif;color:#D8CFC0">{{ insightText }}</div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="display:flex;gap:8px">
+                <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+                  <div onClick="{{ f.onClick }}" style="cursor:pointer;flex:1;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:11px;background:{{ f.bg }};border:1px solid {{ f.border }}">
+                    <div style="font:700 13px/1 Archivo,sans-serif;color:{{ f.fg }}">{{ f.count }}</div>
+                    <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:{{ f.fg }}">{{ f.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <sc-for list="{{ visibleOrders }}" as="o" hint-placeholder-count="4">
+                <div style="border-radius:16px;background:#1F1C17;border:1px solid {{ o.edge }};overflow:hidden">
+                  <div onClick="{{ o.onOpen }}" style="cursor:pointer;padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                      <div style="display:flex;flex-direction:column;gap:6px">
+                        <div style="display:flex;align-items:center;gap:8px">
+                          <div style="font:700 17px/1 'IBM Plex Mono',monospace;letter-spacing:-.01em">{{ o.code }}</div>
+                          <div style="padding:4px 8px;border-radius:6px;background:{{ o.brandBg }};font:600 10.5px/1 Archivo,sans-serif;color:{{ o.brandFg }}">{{ o.brand }}</div>
+                        </div>
+                        <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8C8376;letter-spacing:.05em">{{ o.meta }}</div>
+                      </div>
+                      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+                        <div style="font:600 26px/1 'IBM Plex Mono',monospace;color:{{ o.timeColor }};letter-spacing:-.02em">{{ o.elapsed }}</div>
+                        <div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8C8376">/ {{ o.promise }} min</div>
+                      </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:5px">
+                      <sc-for list="{{ o.lines }}" as="l" hint-placeholder-count="2">
+                        <div style="display:flex;align-items:center;gap:9px">
+                          <div style="font:600 13px/1.3 'IBM Plex Mono',monospace;color:#FFB020;min-width:22px">{{ l.qty }}</div>
+                          <div style="font:500 14px/1.3 Archivo,sans-serif;color:#E8E2D7;flex:1">{{ l.name }}</div>
+                          <div style="font:500 10px/1 'IBM Plex Mono',monospace;color:#8C8376;letter-spacing:.08em">{{ l.station }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="height:4px;border-radius:99px;background:#2E2921;overflow:hidden">
+                      <div style="height:100%;border-radius:99px;background:{{ o.timeColor }};width:{{ o.pct }}%"></div>
+                    </div>
+                  </div>
+                  <div onClick="{{ o.onAction }}" style="cursor:pointer;height:56px;display:flex;align-items:center;justify-content:center;gap:9px;background:{{ o.actionBg }};color:{{ o.actionFg }};font:700 15px/1 Archivo,sans-serif;letter-spacing:.01em">{{ o.actionLabel }}</div>
+                </div>
+              </sc-for>
+
+              <sc-if value="{{ queueEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:44px 20px;text-align:center;font:500 14px/1.5 Archivo,sans-serif;color:#6F675C;border:1px dashed #2E2921;border-radius:16px">Nothing on this rail. All caught up.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isTicket }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div onClick="{{ backToQueue }}" style="cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;color:#A39A8C;letter-spacing:.08em">← QUEUE</div>
+              <div style="padding:16px;border-radius:16px;background:#1F1C17;border:1px solid {{ ticket.edge }};display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <div style="font:700 24px/1 'IBM Plex Mono',monospace">{{ ticket.code }}</div>
+                  <div style="padding:4px 8px;border-radius:6px;background:{{ ticket.brandBg }};font:600 11px/1 Archivo,sans-serif;color:{{ ticket.brandFg }};align-self:flex-start">{{ ticket.brand }}</div>
+                  <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8C8376">{{ ticket.meta }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+                  <div style="font:600 40px/1 'IBM Plex Mono',monospace;color:{{ ticket.timeColor }};letter-spacing:-.03em">{{ ticket.elapsed }}</div>
+                  <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8C8376">promise {{ ticket.promise }} min</div>
+                </div>
+              </div>
+
+              <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#6F675C;padding-left:2px">TAP AS YOU PLATE</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ ticket.lines }}" as="l" hint-placeholder-count="3">
+                  <div onClick="{{ l.onToggle }}" style="cursor:pointer;min-height:64px;display:flex;align-items:center;gap:13px;padding:12px 14px;border-radius:14px;background:{{ l.bg }};border:1px solid {{ l.edge }}">
+                    <div style="width:26px;height:26px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ l.boxBg }};border:2px solid {{ l.boxEdge }};font:700 14px/1 Archivo,sans-serif;color:#14120F">{{ l.mark }}</div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                      <div style="font:600 16px/1.2 Archivo,sans-serif;color:{{ l.fg }}">{{ l.qty }} {{ l.name }}</div>
+                      <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8C8376;letter-spacing:.06em">{{ l.station }} · {{ l.note }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="padding:13px 14px;border-radius:14px;background:#231D12;border:1px solid #4A3A18;font:500 13px/1.5 Archivo,sans-serif;color:#E8DCC4">{{ ticket.customerNote }}</div>
+
+              <div onClick="{{ ticket.onAction }}" style="cursor:pointer;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:{{ ticket.actionBg }};color:{{ ticket.actionFg }};font:700 17px/1 Archivo,sans-serif">{{ ticket.actionLabel }}</div>
+              <div style="height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid #35302A;font:600 14px/1 Archivo,sans-serif;color:#A39A8C">Flag a problem</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isMenu }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;gap:8px;overflow:auto;padding-bottom:2px">
+                <sc-for list="{{ brandTabs }}" as="b" hint-placeholder-count="4">
+                  <div onClick="{{ b.onClick }}" style="cursor:pointer;flex:none;height:44px;padding:0 15px;display:flex;align-items:center;border-radius:11px;background:{{ b.bg }};border:1px solid {{ b.border }};font:600 13px/1 Archivo,sans-serif;color:{{ b.fg }}">{{ b.name }}</div>
+                </sc-for>
+              </div>
+              <div style="font:500 12px/1.4 Archivo,sans-serif;color:#8C8376">{{ menuSummary }}</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ menuRows }}" as="m" hint-placeholder-count="5">
+                  <div style="min-height:72px;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#1F1C17;border:1px solid {{ m.edge }}">
+                    <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                      <div style="font:600 15px/1.2 Archivo,sans-serif;color:{{ m.fg }}">{{ m.name }}</div>
+                      <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8C8376;letter-spacing:.05em">{{ m.priceStr }} · {{ m.marginStr }} margin · {{ m.station }}</div>
+                    </div>
+                    <div onClick="{{ m.onToggle }}" style="cursor:pointer;width:64px;height:36px;border-radius:99px;background:{{ m.trackBg }};border:1px solid {{ m.trackEdge }};display:flex;align-items:center;justify-content:{{ m.justify }};padding:3px">
+                      <div style="width:28px;height:28px;border-radius:50%;background:{{ m.knob }}"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isStock }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;gap:10px">
+                <div style="flex:1;padding:14px;border-radius:14px;background:#1F1C17;border:1px solid #2E2921">
+                  <div style="font:700 26px/1 'IBM Plex Mono',monospace;color:#FF6B4A">{{ lowCount }}</div>
+                  <div style="font:500 11px/1.3 Archivo,sans-serif;color:#8C8376;margin-top:6px">below par</div>
+                </div>
+                <div style="flex:1;padding:14px;border-radius:14px;background:#1F1C17;border:1px solid #2E2921">
+                  <div style="font:700 26px/1 'IBM Plex Mono',monospace;color:#4FD08E">{{ okCount }}</div>
+                  <div style="font:500 11px/1.3 Archivo,sans-serif;color:#8C8376;margin-top:6px">healthy</div>
+                </div>
+              </div>
+              <sc-for list="{{ stockRows }}" as="s" hint-placeholder-count="5">
+                <div style="padding:14px;border-radius:14px;background:#1F1C17;border:1px solid {{ s.edge }};display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between">
+                    <div style="font:600 15px/1 Archivo,sans-serif">{{ s.name }}</div>
+                    <div style="font:600 13px/1 'IBM Plex Mono',monospace;color:{{ s.color }}">{{ s.qty }}</div>
+                  </div>
+                  <div style="height:6px;border-radius:99px;background:#2E2921;overflow:hidden">
+                    <div style="height:100%;border-radius:99px;background:{{ s.color }};width:{{ s.pct }}%"></div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                    <div style="font:500 11px/1.3 'IBM Plex Mono',monospace;color:#8C8376">{{ s.foot }}</div>
+                    <div onClick="{{ s.onAct }}" style="cursor:pointer;height:40px;padding:0 14px;display:flex;align-items:center;border-radius:10px;background:{{ s.actBg }};border:1px solid {{ s.actEdge }};font:600 12px/1 Archivo,sans-serif;color:{{ s.actFg }}">{{ s.actLabel }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isSales }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-wrap:wrap;gap:10px">
+                <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                  <div style="flex:1 1 45%;padding:14px;border-radius:14px;background:#1F1C17;border:1px solid #2E2921;display:flex;flex-direction:column;gap:6px">
+                    <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#8C8376">{{ k.label }}</div>
+                    <div style="font:700 25px/1 'IBM Plex Mono',monospace;letter-spacing:-.02em;color:#F5F0E8">{{ k.value }}</div>
+                    <div style="font:500 11px/1 Archivo,sans-serif;color:{{ k.deltaColor }}">{{ k.delta }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="padding:16px 14px;border-radius:16px;background:#1F1C17;border:1px solid #2E2921;display:flex;flex-direction:column;gap:12px">
+                <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8C8376">ORDERS BY HOUR</div>
+                <div style="display:flex;align-items:flex-end;gap:5px;height:110px">
+                  <sc-for list="{{ hours }}" as="h" hint-placeholder-count="12">
+                    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%">
+                      <div style="width:100%;border-radius:4px 4px 2px 2px;background:{{ h.color }};height:{{ h.pct }}%"></div>
+                      <div style="font:500 9px/1 'IBM Plex Mono',monospace;color:#6F675C">{{ h.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#8C8376;padding-left:2px">BRAND CONTRIBUTION</div>
+                <sc-for list="{{ brandRows }}" as="b" hint-placeholder-count="4">
+                  <div style="padding:13px 14px;border-radius:14px;background:#1F1C17;border:1px solid #2E2921;display:flex;flex-direction:column;gap:9px">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between">
+                      <div style="font:600 15px/1 Archivo,sans-serif">{{ b.name }}</div>
+                      <div style="font:600 14px/1 'IBM Plex Mono',monospace">{{ b.rev }}</div>
+                    </div>
+                    <div style="height:6px;border-radius:99px;background:#2E2921;overflow:hidden">
+                      <div style="height:100%;border-radius:99px;background:{{ b.color }};width:{{ b.pct }}%"></div>
+                    </div>
+                    <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8C8376">{{ b.foot }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="flex:none;display:flex;border-top:1px solid #2A251E;background:#181510">
+          <sc-for list="{{ kitchenNav }}" as="n" hint-placeholder-count="4">
+            <div onClick="{{ n.onClick }}" style="cursor:pointer;flex:1;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">
+              <div style="width:24px;height:4px;border-radius:99px;background:{{ n.dot }}"></div>
+              <div style="font:600 11.5px/1 Archivo,sans-serif;color:{{ n.fg }}">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCustomer }}" hint-placeholder-val="{{ false }}">
+      <div style="height:100%;display:flex;flex-direction:column;background:#F7F2E9;color:#1B1712;font-family:Archivo,sans-serif">
+
+        <div style="flex:none;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E6DDCD;background:#F7F2E9">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="font:700 19px/1 Archivo,sans-serif;letter-spacing:-.01em">{{ shopTitle }}</div>
+            <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8A8073;letter-spacing:.05em">{{ shopSub }}</div>
+          </div>
+          <div onClick="{{ toKitchen }}" style="cursor:pointer;height:40px;padding:0 14px;display:flex;align-items:center;border-radius:999px;border:1px solid #DCD2C0;background:#FFFFFF;font:600 12px/1 Archivo,sans-serif;color:#4A4238">Kitchen</div>
+        </div>
+
+        <div style="flex:1;overflow:auto;padding:14px 16px 20px">
+
+          <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;gap:8px;overflow:auto">
+                <sc-for list="{{ shopTabs }}" as="b" hint-placeholder-count="4">
+                  <div onClick="{{ b.onClick }}" style="cursor:pointer;flex:none;height:44px;padding:0 15px;display:flex;align-items:center;border-radius:11px;background:{{ b.bg }};border:1px solid {{ b.border }};font:600 13px/1 Archivo,sans-serif;color:{{ b.fg }}">{{ b.name }}</div>
+                </sc-for>
+              </div>
+              <div style="font:400 13px/1.5 Archivo,sans-serif;color:#7A7065">{{ shopBlurb }}</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ shopItems }}" as="i" hint-placeholder-count="4">
+                  <div onClick="{{ i.onOpen }}" style="cursor:pointer;display:flex;gap:13px;padding:12px;border-radius:16px;background:#FFFFFF;border:1px solid #E6DDCD;opacity:{{ i.opacity }}">
+                    <div style="width:88px;height:88px;flex:none;border-radius:12px;background:repeating-linear-gradient(135deg,#EFE7D8 0 7px,#E6DCC9 7px 14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font:500 8px/1 'IBM Plex Mono',monospace;color:#A09684">food shot</div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:5px;padding-top:2px">
+                      <div style="font:600 16px/1.2 Archivo,sans-serif">{{ i.name }}</div>
+                      <div style="font:400 12px/1.45 Archivo,sans-serif;color:#7A7065">{{ i.desc }}</div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
+                        <div style="font:600 15px/1 'IBM Plex Mono',monospace">{{ i.priceStr }}</div>
+                        <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:{{ i.tagColor }}">{{ i.tag }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isItem }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div onClick="{{ backToBrowse }}" style="cursor:pointer;font:600 12px/1 'IBM Plex Mono',monospace;color:#8A8073;letter-spacing:.08em">← MENU</div>
+              <div style="height:190px;border-radius:18px;background:repeating-linear-gradient(135deg,#EFE7D8 0 9px,#E6DCC9 9px 18px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font:500 10px/1 'IBM Plex Mono',monospace;color:#A09684">hero food shot 4:3</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="font:700 26px/1.15 Archivo,sans-serif;letter-spacing:-.02em">{{ item.name }}</div>
+                <div style="font:400 14px/1.55 Archivo,sans-serif;color:#7A7065">{{ item.desc }}</div>
+                <div style="font:500 11.5px/1 'IBM Plex Mono',monospace;color:#8A8073;letter-spacing:.05em">{{ item.brand }} · ready in {{ item.prep }} min</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;background:#FFFFFF;border:1px solid #E6DDCD">
+                <div style="font:600 14px/1 Archivo,sans-serif">Quantity</div>
+                <div style="display:flex;align-items:center;gap:14px">
+                  <div onClick="{{ decQty }}" style="cursor:pointer;width:44px;height:44px;border-radius:12px;border:1px solid #DCD2C0;display:flex;align-items:center;justify-content:center;font:600 20px/1 Archivo,sans-serif">−</div>
+                  <div style="font:600 18px/1 'IBM Plex Mono',monospace;min-width:22px;text-align:center">{{ qty }}</div>
+                  <div onClick="{{ incQty }}" style="cursor:pointer;width:44px;height:44px;border-radius:12px;border:1px solid #DCD2C0;display:flex;align-items:center;justify-content:center;font:600 20px/1 Archivo,sans-serif">+</div>
+                </div>
+              </div>
+              <div onClick="{{ addToCart }}" style="cursor:pointer;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:10px;background:{{ item.ctaBg }};color:{{ item.ctaFg }};font:700 16px/1 Archivo,sans-serif">{{ item.ctaLabel }}</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isCart }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <sc-for list="{{ cartRows }}" as="c" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#FFFFFF;border:1px solid #E6DDCD">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                    <div style="font:600 15px/1.2 Archivo,sans-serif">{{ c.name }}</div>
+                    <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8A8073">{{ c.brand }} · {{ c.lineTotal }}</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div onClick="{{ c.onDec }}" style="cursor:pointer;width:40px;height:40px;border-radius:11px;border:1px solid #DCD2C0;display:flex;align-items:center;justify-content:center;font:600 18px/1 Archivo,sans-serif">−</div>
+                    <div style="font:600 15px/1 'IBM Plex Mono',monospace;min-width:16px;text-align:center">{{ c.qty }}</div>
+                    <div onClick="{{ c.onInc }}" style="cursor:pointer;width:40px;height:40px;border-radius:11px;border:1px solid #DCD2C0;display:flex;align-items:center;justify-content:center;font:600 18px/1 Archivo,sans-serif">+</div>
+                  </div>
+                </div>
+              </sc-for>
+
+              <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:44px 20px;text-align:center;font:500 14px/1.5 Archivo,sans-serif;color:#9A9184;border:1px dashed #DCD2C0;border-radius:16px">Your bag is empty.</div>
+              </sc-if>
+
+              <sc-if value="{{ cartHas }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:#FFFFFF;border:1px solid #E6DDCD">
+                  <sc-for list="{{ billRows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;font:500 13px/1 Archivo,sans-serif;color:#6E6559">
+                      <div>{{ r.label }}</div><div style="font-family:'IBM Plex Mono',monospace">{{ r.value }}</div>
+                    </div>
+                  </sc-for>
+                  <div style="height:1px;background:#EDE4D5;margin:4px 0"></div>
+                  <div style="display:flex;justify-content:space-between;font:700 17px/1 Archivo,sans-serif">
+                    <div>Total</div><div style="font-family:'IBM Plex Mono',monospace">{{ cartTotal }}</div>
+                  </div>
+                </div>
+                <div onClick="{{ placeOrder }}" style="cursor:pointer;height:62px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:#1B1712;color:#FFF3DE;font:700 16px/1 Archivo,sans-serif">Place order · {{ cartTotal }}</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isTrack }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <sc-if value="{{ hasTrack }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+                  <div style="padding:18px;border-radius:18px;background:#1B1712;color:#F7F2E9;display:flex;flex-direction:column;gap:8px">
+                    <div style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#C8B896">{{ track.code }} · {{ track.brand }}</div>
+                    <div style="font:700 24px/1.2 Archivo,sans-serif;letter-spacing:-.01em">{{ track.headline }}</div>
+                    <div style="font:400 13px/1.5 Archivo,sans-serif;color:#BFB4A2">{{ track.sub }}</div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:0">
+                    <sc-for list="{{ track.steps }}" as="s" hint-placeholder-count="4">
+                      <div style="display:flex;gap:14px;align-items:flex-start">
+                        <div style="display:flex;flex-direction:column;align-items:center;width:20px">
+                          <div style="width:14px;height:14px;border-radius:50%;background:{{ s.dot }};border:2px solid {{ s.ring }}"></div>
+                          <div style="width:2px;height:44px;background:{{ s.line }}"></div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:3px;padding-bottom:14px">
+                          <div style="font:600 15px/1.2 Archivo,sans-serif;color:{{ s.fg }}">{{ s.label }}</div>
+                          <div style="font:500 11px/1 'IBM Plex Mono',monospace;color:#8A8073">{{ s.note }}</div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="height:150px;border-radius:16px;background:repeating-linear-gradient(135deg,#EFE7D8 0 9px,#E6DCC9 9px 18px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font:500 10px/1 'IBM Plex Mono',monospace;color:#A09684">live rider map</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noTrack }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:44px 20px;text-align:center;font:500 14px/1.5 Archivo,sans-serif;color:#9A9184;border:1px dashed #DCD2C0;border-radius:16px">No live order yet. Place one from the menu and it lands in the kitchen queue.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="flex:none;display:flex;border-top:1px solid #E6DDCD;background:#FFFFFF">
+          <sc-for list="{{ shopNav }}" as="n" hint-placeholder-count="3">
+            <div onClick="{{ n.onClick }}" style="cursor:pointer;flex:1;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">
+              <div style="width:24px;height:4px;border-radius:99px;background:{{ n.dot }}"></div>
+              <div style="font:600 11.5px/1 Archivo,sans-serif;color:{{ n.fg }}">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:880,&quot;height&quot;:1010},&quot;rushMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Simulation&quot;},&quot;showForecast&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Simulation&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const t = Date.now();
+    this.state = {
+      now: t,
+      role: 'kitchen',
+      kScreen: 'queue',
+      cScreen: 'browse',
+      filter: 'all',
+      menuBrand: 'Curry Line',
+      shopBrand: 'Curry Line',
+      openId: null,
+      itemId: null,
+      qty: 1,
+      cart: [],
+      trackId: null,
+      seq: 1047,
+      items: [
+        { id: 'i1', brand: 'Curry Line', name: 'Butter Chicken Bowl', price: 340, cost: 128, station: 'WOK', prep: 14, avail: true, desc: 'Slow-simmered tomato gravy, charred thigh, cultured butter.' },
+        { id: 'i2', brand: 'Curry Line', name: 'Dal Makhani + Rice', price: 260, cost: 74, station: 'WOK', prep: 10, avail: true, desc: 'Black lentils held overnight, finished with cream.' },
+        { id: 'i3', brand: 'Curry Line', name: 'Paneer Tikka Roll', price: 220, cost: 88, station: 'GRILL', prep: 9, avail: true, desc: 'Coal-smoked paneer, pickled onion, mint.' },
+        { id: 'i4', brand: 'Wok Theory', name: 'Chilli Garlic Noodles', price: 280, cost: 92, station: 'WOK', prep: 8, avail: true, desc: 'Hand-pulled noodles, black vinegar, fried garlic.' },
+        { id: 'i5', brand: 'Wok Theory', name: 'Kung Pao Cauliflower', price: 300, cost: 105, station: 'FRY', prep: 11, avail: true, desc: 'Twice-fried florets, Sichuan pepper, cashew.' },
+        { id: 'i6', brand: 'Bowl & Bird', name: 'Peri Chicken Bowl', price: 360, cost: 140, station: 'GRILL', prep: 13, avail: true, desc: 'Flame-grilled thigh, charred corn, herbed rice.' },
+        { id: 'i7', brand: 'Bowl & Bird', name: 'Crispy Chicken Wrap', price: 290, cost: 108, station: 'FRY', prep: 10, avail: true, desc: 'Buttermilk-brined, slaw, house hot honey.' },
+        { id: 'i8', brand: 'Slice Lab', name: 'Margherita 10"', price: 320, cost: 96, station: 'OVEN', prep: 12, avail: true, desc: '48-hour cold ferment, fior di latte, basil.' },
+        { id: 'i9', brand: 'Slice Lab', name: 'Truffle Mushroom 10"', price: 420, cost: 165, station: 'OVEN', prep: 13, avail: true, desc: 'Cremini, taleggio, black truffle oil.' }
+      ],
+      stock: [
+        { id: 's1', name: 'Chicken thigh, boneless', qty: '4.2 kg', pct: 18, par: '24 kg par', link: 'i1', ordered: false },
+        { id: 's2', name: 'Cultured butter', qty: '1.1 kg', pct: 22, par: '5 kg par', link: 'i1', ordered: false },
+        { id: 's3', name: 'Paneer', qty: '6.4 kg', pct: 64, par: '10 kg par', link: 'i3', ordered: false },
+        { id: 's4', name: 'Fior di latte', qty: '8.0 kg', pct: 80, par: '10 kg par', link: 'i8', ordered: false },
+        { id: 's5', name: 'Hand-pulled noodles', qty: '11 packs', pct: 55, par: '20 packs par', link: 'i4', ordered: false }
+      ],
+      orders: [
+        { id: 'o1', code: '#1042', brand: 'Curry Line', channel: 'ZIPP', placed: t - 9 * 60000, promise: 18, stage: 'cooking', note: 'No onions. Extra napkins.', lines: [ { name: 'Butter Chicken Bowl', qty: 2, station: 'WOK', note: 'mild', done: true }, { name: 'Dal Makhani + Rice', qty: 1, station: 'WOK', note: 'no cream', done: false } ] },
+        { id: 'o2', code: '#1043', brand: 'Slice Lab', channel: 'MUNCHLY', placed: t - 15 * 60000, promise: 16, stage: 'cooking', note: 'Cut into 8. Ring on arrival.', lines: [ { name: 'Truffle Mushroom 10"', qty: 1, station: 'OVEN', note: 'well done', done: false } ] },
+        { id: 'o3', code: '#1044', brand: 'Wok Theory', channel: 'DIRECT', placed: t - 2 * 60000, promise: 15, stage: 'new', note: 'Add chopsticks.', lines: [ { name: 'Chilli Garlic Noodles', qty: 2, station: 'WOK', note: 'extra hot', done: false }, { name: 'Kung Pao Cauliflower', qty: 1, station: 'FRY', note: '', done: false } ] },
+        { id: 'o4', code: '#1045', brand: 'Bowl & Bird', channel: 'ZIPP', placed: t - 12 * 60000, promise: 17, stage: 'ready', note: 'Leave at gate.', lines: [ { name: 'Peri Chicken Bowl', qty: 1, station: 'GRILL', note: 'hot sauce', done: true } ] },
+        { id: 'o5', code: '#1046', brand: 'Curry Line', channel: 'MUNCHLY', placed: t - 4 * 60000, promise: 18, stage: 'new', note: '', lines: [ { name: 'Paneer Tikka Roll', qty: 3, station: 'GRILL', note: '', done: false } ] }
+      ]
+    };
+  }
+
+  componentDidMount() { this._t = setInterval(() => this.setState({ now: Date.now() }), 1000); }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  brandColor(b) {
+    return { 'Curry Line': '#FFB020', 'Wok Theory': '#4FD08E', 'Bowl & Bird': '#7FB2FF', 'Slice Lab': '#FF8A5C' }[b] || '#FFB020';
+  }
+  money(n) { return '\u20B9' + n.toLocaleString('en-IN'); }
+  mmss(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+  rush() { return this.props.rushMode ?? false; }
+
+  timing(o) {
+    const promise = o.promise * (this.rush() ? 0.7 : 1);
+    const el = (this.state.now - o.placed) / 1000;
+    const frac = el / (promise * 60);
+    const color = frac > 1 ? '#FF6B4A' : frac > 0.7 ? '#FFB020' : '#4FD08E';
+    return { elapsed: this.mmss(el), pct: Math.min(100, frac * 100), color, promise: Math.round(promise) };
+  }
+
+  advance(id) {
+    this.setState(s => ({
+      orders: s.orders.map(o => {
+        if (o.id !== id) return o;
+        const next = { new: 'cooking', cooking: 'ready', ready: 'picked' }[o.stage];
+        return { ...o, stage: next, lines: next === 'ready' ? o.lines.map(l => ({ ...l, done: true })) : o.lines };
+      }).filter(o => o.stage !== 'picked' || o.id === s.trackId)
+    }));
+  }
+
+  actionFor(stage) {
+    if (stage === 'new') return { label: 'Start cooking', bg: '#FFB020', fg: '#191510' };
+    if (stage === 'cooking') return { label: 'Mark ready', bg: '#4FD08E', fg: '#0F2318' };
+    if (stage === 'ready') return { label: 'Hand to rider', bg: '#2A251E', fg: '#F5F0E8' };
+    return { label: 'Picked up', bg: '#2A251E', fg: '#8C8376' };
+  }
+
+  orderVM(o) {
+    const t = this.timing(o);
+    const a = this.actionFor(o.stage);
+    const bc = this.brandColor(o.brand);
+    return {
+      code: o.code, brand: o.brand, brandBg: bc + '22', brandFg: bc,
+      meta: o.channel + ' \u00B7 ' + o.stage.toUpperCase(),
+      elapsed: t.elapsed, promise: t.promise, pct: t.pct, timeColor: t.color,
+      edge: o.stage === 'ready' ? '#2E5B44' : t.pct >= 100 ? '#5B2E22' : '#2E2921',
+      lines: o.lines.map(l => ({ qty: l.qty + '\u00D7', name: l.name, station: l.station })),
+      actionLabel: a.label, actionBg: a.bg, actionFg: a.fg,
+      onAction: () => this.advance(o.id),
+      onOpen: () => this.setState({ kScreen: 'ticket', openId: o.id })
+    };
+  }
+
+  placeOrder() {
+    const { cart, seq } = this.state;
+    if (!cart.length) return;
+    const id = 'n' + seq;
+    const brand = cart[0].brand;
+    const order = {
+      id, code: '#' + seq, brand, channel: 'DIRECT', placed: Date.now(), promise: 16, stage: 'new', note: 'Direct app order \u00B7 contactless drop.',
+      lines: cart.map(c => ({ name: c.name, qty: c.qty, station: c.station, note: '', done: false }))
+    };
+    this.setState(s => ({ orders: [order, ...s.orders], cart: [], seq: s.seq + 1, trackId: id, cScreen: 'track' }));
+  }
+
+  renderVals() {
+    const S = this.state;
+    const isKitchen = S.role === 'kitchen';
+    const nav = (id, label, cur, set) => ({ label, dot: cur === id ? '#FFB020' : 'transparent', fg: cur === id ? '#F5F0E8' : '#7E7568', onClick: () => set(id) });
+
+    const counts = { all: S.orders.length, new: 0, cooking: 0, ready: 0 };
+    S.orders.forEach(o => { if (counts[o.stage] !== undefined) counts[o.stage]++; });
+    const visible = S.orders.filter(o => S.filter === 'all' ? o.stage !== 'picked' : o.stage === S.filter)
+      .sort((a, b) => a.placed - b.placed);
+
+    const open = S.orders.find(o => o.id === S.openId) || S.orders[0];
+    const ot = open ? this.timing(open) : null;
+    const oa = open ? this.actionFor(open.stage) : null;
+    const obc = open ? this.brandColor(open.brand) : '#FFB020';
+
+    const menuRows = S.items.filter(i => i.brand === S.menuBrand).map(i => ({
+      name: i.name, fg: i.avail ? '#F5F0E8' : '#7E7568',
+      priceStr: this.money(i.price),
+      marginStr: Math.round((1 - i.cost / i.price) * 100) + '%',
+      station: i.station,
+      edge: i.avail ? '#2E2921' : '#5B2E22',
+      trackBg: i.avail ? '#4FD08E' : '#2A251E', trackEdge: i.avail ? '#4FD08E' : '#4A4238',
+      knob: i.avail ? '#0F2318' : '#7E7568', justify: i.avail ? 'flex-end' : 'flex-start',
+      onToggle: () => this.setState(s => ({ items: s.items.map(x => x.id === i.id ? { ...x, avail: !x.avail } : x) }))
+    }));
+    const outCount = S.items.filter(i => i.brand === S.menuBrand && !i.avail).length;
+
+    const stockRows = S.stock.map(s => {
+      const low = s.pct < 30;
+      const color = s.pct < 25 ? '#FF6B4A' : s.pct < 50 ? '#FFB020' : '#4FD08E';
+      const linked = S.items.find(i => i.id === s.link);
+      const off = linked && !linked.avail;
+      return {
+        name: s.name, qty: s.qty, pct: s.pct, color, edge: low ? '#5B2E22' : '#2E2921',
+        foot: s.ordered ? 'reorder placed \u00B7 ETA tomorrow 07:00' : s.par + ' \u00B7 feeds ' + (linked ? linked.name : 'multiple items'),
+        actLabel: low && linked ? (off ? 'Back on menu' : '86 ' + linked.name.split(' ')[0]) : (s.ordered ? 'Ordered' : 'Reorder'),
+        actBg: low ? '#3A1F16' : '#1F1C17', actEdge: low ? '#5B2E22' : '#3A342B', actFg: low ? '#FF9B7F' : '#A39A8C',
+        onAct: () => {
+          if (low && linked) this.setState(st => ({ items: st.items.map(x => x.id === linked.id ? { ...x, avail: !x.avail } : x) }));
+          else this.setState(st => ({ stock: st.stock.map(x => x.id === s.id ? { ...x, ordered: true } : x) }));
+        }
+      };
+    });
+
+    const hoursRaw = [4, 7, 9, 14, 22, 17, 9, 6, 8, 15, 26, 19];
+    const hourLabels = ['11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+    const hmax = Math.max(...hoursRaw);
+    const brandTotals = [
+      { name: 'Curry Line', rev: 48200, margin: 62 },
+      { name: 'Slice Lab', rev: 39100, margin: 68 },
+      { name: 'Bowl & Bird', rev: 27400, margin: 59 },
+      { name: 'Wok Theory', rev: 18900, margin: 64 }
+    ];
+    const bmax = brandTotals[0].rev;
+
+    const shopItems = S.items.filter(i => i.brand === S.shopBrand).map(i => ({
+      name: i.name, desc: i.desc, priceStr: this.money(i.price),
+      opacity: i.avail ? 1 : 0.45,
+      tag: i.avail ? i.prep + ' MIN' : 'SOLD OUT TODAY',
+      tagColor: i.avail ? '#7A7065' : '#C0472A',
+      onOpen: () => i.avail && this.setState({ cScreen: 'item', itemId: i.id, qty: 1 })
+    }));
+
+    const item = S.items.find(i => i.id === S.itemId) || S.items[0];
+    const cartRows = S.cart.map(c => ({
+      name: c.name, brand: c.brand, qty: c.qty, lineTotal: this.money(c.price * c.qty),
+      onInc: () => this.setState(s => ({ cart: s.cart.map(x => x.id === c.id ? { ...x, qty: x.qty + 1 } : x) })),
+      onDec: () => this.setState(s => ({ cart: s.cart.flatMap(x => x.id !== c.id ? [x] : x.qty > 1 ? [{ ...x, qty: x.qty - 1 }] : []) }))
+    }));
+    const sub = S.cart.reduce((a, c) => a + c.price * c.qty, 0);
+    const fee = S.cart.length ? 39 : 0;
+    const tax = Math.round(sub * 0.05);
+
+    const tOrder = S.orders.find(o => o.id === S.trackId);
+    const stageIdx = tOrder ? { new: 0, cooking: 1, ready: 2, picked: 3 }[tOrder.stage] : 0;
+    const stepDefs = [
+      { label: 'Order accepted', note: 'kitchen confirmed' },
+      { label: 'On the line', note: 'cooking now' },
+      { label: 'Packed & ready', note: 'waiting for rider' },
+      { label: 'On the way', note: 'arriving shortly' }
+    ];
+    const steps = stepDefs.map((s, idx) => ({
+      label: s.label, note: idx <= stageIdx ? s.note : '\u2014',
+      dot: idx < stageIdx ? '#4FD08E' : idx === stageIdx ? '#E08A12' : '#E6DDCD',
+      ring: idx <= stageIdx ? 'transparent' : '#EFE7D8',
+      line: idx < stageIdx ? '#4FD08E' : '#E6DDCD',
+      fg: idx <= stageIdx ? '#1B1712' : '#A79D8E'
+    }));
+    const etaMin = tOrder ? Math.max(1, tOrder.promise - Math.floor((S.now - tOrder.placed) / 60000)) : 0;
+
+    const kScreens = [['queue', 'Queue'], ['ticket', 'Ticket'], ['menu', 'Menu'], ['stock', 'Stock'], ['sales', 'Sales']];
+    const cScreens = [['browse', 'Storefront'], ['item', 'Dish'], ['cart', 'Bag'], ['track', 'Tracking']];
+    const screenLinks = [
+      ...kScreens.map(([id, label]) => ({
+        label, bg: isKitchen && S.kScreen === id ? '#2A2419' : '#17150F', border: isKitchen && S.kScreen === id ? '#5B4A22' : '#2A251E',
+        fg: isKitchen && S.kScreen === id ? '#FFB020' : '#A39A8C',
+        onClick: () => this.setState({ role: 'kitchen', kScreen: id })
+      })),
+      ...cScreens.map(([id, label]) => ({
+        label, bg: !isKitchen && S.cScreen === id ? '#2A2419' : '#17150F', border: !isKitchen && S.cScreen === id ? '#5B4A22' : '#2A251E',
+        fg: !isKitchen && S.cScreen === id ? '#FFB020' : '#A39A8C',
+        onClick: () => this.setState({ role: 'customer', cScreen: id })
+      }))
+    ];
+
+    const titles = { queue: 'Live queue', ticket: 'Ticket', menu: 'Menu & 86s', stock: 'Inventory', sales: 'Today' };
+    const cartCount = S.cart.reduce((a, c) => a + c.qty, 0);
+
+    return {
+      isKitchen, isCustomer: !isKitchen,
+      isQueue: isKitchen && S.kScreen === 'queue',
+      isTicket: isKitchen && S.kScreen === 'ticket',
+      isMenu: isKitchen && S.kScreen === 'menu',
+      isStock: isKitchen && S.kScreen === 'stock',
+      isSales: isKitchen && S.kScreen === 'sales',
+      isBrowse: !isKitchen && S.cScreen === 'browse',
+      isItem: !isKitchen && S.cScreen === 'item',
+      isCart: !isKitchen && S.cScreen === 'cart',
+      isTrack: !isKitchen && S.cScreen === 'track',
+      screenLinks,
+      kitchenTitle: titles[S.kScreen] || 'Live queue',
+      kitchenSub: 'HSR KITCHEN 04 \u00B7 ' + counts.all + ' OPEN \u00B7 4 BRANDS',
+      toStorefront: () => this.setState({ role: 'customer' }),
+      toKitchen: () => this.setState({ role: 'kitchen' }),
+      showInsight: (this.props.showForecast ?? true) && S.kScreen === 'queue',
+      insightText: 'Butter Chicken demand tracking 34% above last Thursday. Par 8 extra gravy portions and pre-grill 12 thighs now.',
+
+      filters: [['all', 'ALL'], ['new', 'NEW'], ['cooking', 'COOK'], ['ready', 'READY']].map(([id, label]) => ({
+        label, count: counts[id],
+        bg: S.filter === id ? '#2A2419' : '#1F1C17', border: S.filter === id ? '#5B4A22' : '#2E2921',
+        fg: S.filter === id ? '#FFB020' : '#A39A8C',
+        onClick: () => this.setState({ filter: id })
+      })),
+      visibleOrders: visible.map(o => this.orderVM(o)),
+      queueEmpty: visible.length === 0,
+
+      ticket: open ? {
+        code: open.code, brand: open.brand, brandBg: obc + '22', brandFg: obc,
+        meta: open.channel + ' \u00B7 ' + open.stage.toUpperCase(),
+        elapsed: ot.elapsed, promise: ot.promise, timeColor: ot.color,
+        edge: ot.pct >= 100 ? '#5B2E22' : '#2E2921',
+        customerNote: open.note || 'No customer notes on this ticket.',
+        lines: open.lines.map((l, idx) => ({
+          qty: l.qty + '\u00D7', name: l.name, station: l.station, note: l.note || 'no mods',
+          mark: l.done ? '\u2713' : '', bg: l.done ? '#17251C' : '#1F1C17', edge: l.done ? '#2E5B44' : '#2E2921',
+          boxBg: l.done ? '#4FD08E' : 'transparent', boxEdge: l.done ? '#4FD08E' : '#4A4238',
+          fg: l.done ? '#8FD8AE' : '#F5F0E8',
+          onToggle: () => this.setState(s => ({
+            orders: s.orders.map(o => o.id !== open.id ? o : { ...o, lines: o.lines.map((x, j) => j === idx ? { ...x, done: !x.done } : x) })
+          }))
+        })),
+        actionLabel: oa.label, actionBg: oa.bg, actionFg: oa.fg,
+        onAction: () => { this.advance(open.id); this.setState({ kScreen: 'queue' }); }
+      } : null,
+      backToQueue: () => this.setState({ kScreen: 'queue' }),
+
+      brandTabs: ['Curry Line', 'Wok Theory', 'Bowl & Bird', 'Slice Lab'].map(b => ({
+        name: b, bg: S.menuBrand === b ? '#2A2419' : '#1F1C17', border: S.menuBrand === b ? '#5B4A22' : '#2E2921',
+        fg: S.menuBrand === b ? '#FFB020' : '#A39A8C', onClick: () => this.setState({ menuBrand: b })
+      })),
+      menuRows,
+      menuSummary: outCount ? outCount + ' item(s) 86\u2019d \u2014 hidden from every channel right now.' : 'Everything on this brand is live across all channels.',
+
+      stockRows,
+      lowCount: S.stock.filter(s => s.pct < 30).length,
+      okCount: S.stock.filter(s => s.pct >= 30).length,
+
+      kpis: [
+        { label: 'REVENUE', value: '\u20B91.34L', delta: '+18% vs last Thu', deltaColor: '#4FD08E' },
+        { label: 'ORDERS', value: '156', delta: '+12% vs last Thu', deltaColor: '#4FD08E' },
+        { label: 'AVG PREP', value: '11:40', delta: '\u221290s vs last Thu', deltaColor: '#4FD08E' },
+        { label: 'MARGIN', value: '63%', delta: '\u22122 pts \u00B7 chicken cost', deltaColor: '#FF6B4A' }
+      ],
+      hours: hoursRaw.map((v, idx) => ({
+        label: hourLabels[idx], pct: Math.round((v / hmax) * 100),
+        color: v === hmax ? '#FFB020' : '#3E382E'
+      })),
+      brandRows: brandTotals.map(b => ({
+        name: b.name, rev: this.money(b.rev), pct: Math.round((b.rev / bmax) * 100),
+        color: this.brandColor(b.name), foot: b.margin + '% margin \u00B7 ' + Math.round(b.rev / 340) + ' orders'
+      })),
+
+      kitchenNav: [
+        nav('queue', 'Queue', S.kScreen === 'ticket' ? 'queue' : S.kScreen, id => this.setState({ kScreen: id })),
+        nav('menu', 'Menu', S.kScreen, id => this.setState({ kScreen: id })),
+        nav('stock', 'Stock', S.kScreen, id => this.setState({ kScreen: id })),
+        nav('sales', 'Sales', S.kScreen, id => this.setState({ kScreen: id }))
+      ],
+
+      shopTitle: { browse: S.shopBrand, item: 'Dish', cart: 'Your bag', track: 'Order tracking' }[S.cScreen],
+      shopSub: { browse: 'DELIVERS IN 25\u201335 MIN \u00B7 HSR', item: 'FROM SMARTCLOUDKITCHEN', cart: cartCount + ' ITEM(S)', track: 'LIVE' }[S.cScreen],
+      shopBlurb: 'Cooked to order in our HSR kitchen. Four kitchens, one bag \u2014 mix brands and it still arrives together.',
+      shopTabs: ['Curry Line', 'Wok Theory', 'Bowl & Bird', 'Slice Lab'].map(b => ({
+        name: b, bg: S.shopBrand === b ? '#1B1712' : '#FFFFFF', border: S.shopBrand === b ? '#1B1712' : '#E6DDCD',
+        fg: S.shopBrand === b ? '#F7F2E9' : '#6E6559', onClick: () => this.setState({ shopBrand: b })
+      })),
+      shopItems,
+      item: {
+        name: item.name, desc: item.desc, brand: item.brand.toUpperCase(), prep: item.prep,
+        ctaLabel: 'Add ' + S.qty + ' to bag \u00B7 ' + this.money(item.price * S.qty),
+        ctaBg: '#1B1712', ctaFg: '#FFF3DE'
+      },
+      qty: S.qty,
+      incQty: () => this.setState(s => ({ qty: s.qty + 1 })),
+      decQty: () => this.setState(s => ({ qty: Math.max(1, s.qty - 1) })),
+      addToCart: () => this.setState(s => {
+        const ex = s.cart.find(c => c.id === item.id);
+        const cart = ex ? s.cart.map(c => c.id === item.id ? { ...c, qty: c.qty + s.qty } : c)
+          : [...s.cart, { id: item.id, name: item.name, brand: item.brand, price: item.price, station: item.station, qty: s.qty }];
+        return { cart, cScreen: 'cart' };
+      }),
+      backToBrowse: () => this.setState({ cScreen: 'browse' }),
+
+      cartRows, cartEmpty: !S.cart.length, cartHas: S.cart.length > 0,
+      billRows: [
+        { label: 'Subtotal', value: this.money(sub) },
+        { label: 'Delivery', value: this.money(fee) },
+        { label: 'Taxes', value: this.money(tax) }
+      ],
+      cartTotal: this.money(sub + fee + tax),
+      placeOrder: () => this.placeOrder(),
+
+      hasTrack: !!tOrder, noTrack: !tOrder,
+      track: tOrder ? {
+        code: tOrder.code, brand: tOrder.brand,
+        headline: stageIdx >= 3 ? 'Rider is on the way' : stageIdx === 2 ? 'Packed \u2014 rider arriving' : stageIdx === 1 ? 'Cooking now' : 'Kitchen has your order',
+        sub: 'Arriving in about ' + etaMin + ' min. Watch it move as the kitchen bumps the ticket.',
+        steps
+      } : null,
+
+      shopNav: [
+        nav('browse', 'Menu', S.cScreen === 'item' ? 'browse' : S.cScreen, id => this.setState({ cScreen: id })),
+        nav('cart', cartCount ? 'Bag \u00B7 ' + cartCount : 'Bag', S.cScreen, id => this.setState({ cScreen: id })),
+        nav('track', 'Orders', S.cScreen, id => this.setState({ cScreen: id }))
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
