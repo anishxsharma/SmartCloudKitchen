@@ -21,9 +21,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-notifications",
-      "expo-status-bar"
-    ]
+    "plugins": ["expo-notifications"]
   }
 }
