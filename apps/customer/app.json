@@ -22,6 +22,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-notifications"]
+    "plugins": [
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3c84a95c-1d1a-4066-84a8-0f031db1be37"
+      }
+    },
+    "owner": "anishxsharma"
   }
 }

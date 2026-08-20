@@ -17,7 +17,10 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -25,8 +28,16 @@
     "plugins": [
       [
         "expo-image-picker",
-        { "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to add a dish photo." }
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to add a dish photo."
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d076d3fb-6d9b-4de2-910f-05e9c9ec582c"
+      }
+    },
+    "owner": "anishxsharma"
   }
 }
