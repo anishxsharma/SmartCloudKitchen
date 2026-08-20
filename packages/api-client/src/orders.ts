@@ -2,6 +2,23 @@ import { nextStage } from '@smartcloudkitchen/domain';
 import type { Channel, Order, OrderLine, OrderStage, OrderWithLines } from '@smartcloudkitchen/types';
 import { getSupabase } from './client';
 
+/**
+ * Every subscribe* call below suffixes its channel name with one of
+ * these. Supabase's realtime client reuses an existing channel object
+ * when you call .channel() with a topic it already has open — if a
+ * caller's cleanup (removeChannel, which is async) hasn't finished
+ * before the same effect fires again with the same topic (React's dev
+ * double-invoke, a fast reconnect, whatever), .on() then throws "cannot
+ * add postgres_changes callbacks ... after subscribe()" on the reused,
+ * already-subscribed object. A unique suffix per call means there's
+ * never a topic to collide on in the first place.
+ */
+let channelSeq = 0;
+function channelInstanceId(): string {
+  channelSeq += 1;
+  return `${Date.now()}-${channelSeq}`;
+}
+
 /** Open tickets across one or more locations — what the kitchen queue screen renders (an owner can view several at once). */
 export async function fetchOpenOrders(locationIds: string[]): Promise<OrderWithLines[]> {
   const { data, error } = await getSupabase()
@@ -104,7 +121,7 @@ export function subscribeToLocationOrders(
 ) {
   const filter = locationIds.length === 1 ? `location_id=eq.${locationIds[0]}` : undefined;
   const channel = getSupabase()
-    .channel(`orders:${locationIds.join(',')}`)
+    .channel(`orders:${locationIds.join(',')}:${channelInstanceId()}`)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'orders', ...(filter ? { filter } : {}) },
@@ -132,7 +149,7 @@ export function subscribeToOrderLineChanges(
   onChange: (line: OrderLine, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => void
 ) {
   const channel = getSupabase()
-    .channel('order_lines:all')
+    .channel(`order_lines:all:${channelInstanceId()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'order_lines' }, (payload) => {
       const line = (payload.eventType === 'DELETE' ? payload.old : payload.new) as OrderLine;
       onChange(line, payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE');
@@ -147,7 +164,7 @@ export function subscribeToOrderLineChanges(
 /** Subscribe to a single order — what the customer tracking screen uses. */
 export function subscribeToOrder(orderId: string, onChange: (order: Order) => void) {
   const channel = getSupabase()
-    .channel(`orders:id:${orderId}`)
+    .channel(`orders:id:${orderId}:${channelInstanceId()}`)
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },

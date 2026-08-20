@@ -47,6 +47,14 @@ function SignedInTabs() {
 
   useEffect(() => {
     loadForLocations(visibleLocationIds);
+    // Tear down the realtime subscriptions this call opens before the
+    // effect fires again (React's dev-mode double-invoke included) —
+    // loadForLocations also unsubscribes at its own start, but not
+    // waiting for that here is what let two subscribe calls race in the
+    // first place.
+    return () => {
+      useKitchenStore.getState().unsubscribe?.();
+    };
   }, [visibleLocationIds.join(','), loadForLocations]);
 
   return (
