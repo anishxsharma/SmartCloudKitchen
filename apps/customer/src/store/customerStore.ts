@@ -3,12 +3,16 @@ import {
   fetchBrands,
   fetchFeedbackForOrder,
   fetchMenuItems,
+  fetchMyCustomer,
   fetchOrder,
   insertDirectOrder,
+  sendCustomerOtp,
+  signOutCustomer as signOutCustomerAuth,
   submitFeedback,
+  verifyCustomerOtp,
 } from '@smartcloudkitchen/api-client';
 import { CUSTOMER_LOCATION_ID } from '@smartcloudkitchen/mock-data';
-import type { Brand, MenuItem, Order, OrderFeedback, OrderLine } from '@smartcloudkitchen/types';
+import type { Brand, Customer, MenuItem, Order, OrderFeedback, OrderLine } from '@smartcloudkitchen/types';
 
 export interface CartLine {
   menuItemId: string;
@@ -39,9 +43,22 @@ interface CustomerState {
   /** Set once usePushRegistration resolves — see App.tsx. */
   pushToken: string | null;
 
+  /** Phone-OTP checkout identity — null until verified. Session persists across app opens (see api-client's client.ts). */
+  customer: Customer | null;
+  customerBootstrapped: boolean;
+  otpPhone: string | null;
+  sendingOtp: boolean;
+  verifyingOtp: boolean;
+  authError: string | null;
+
   tick: () => void;
   setPushToken: (token: string) => void;
   loadCatalog: () => Promise<void>;
+  bootstrapCustomer: () => Promise<void>;
+  sendOtp: (phone: string) => Promise<void>;
+  verifyOtp: (code: string) => Promise<void>;
+  cancelPhoneAuth: () => void;
+  signOutCustomer: () => Promise<void>;
   setShopBrand: (brandId: string) => void;
   openItem: (itemId: string) => void;
   backToBrowse: () => void;
@@ -75,8 +92,53 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   feedbackSubmitting: false,
   pushToken: null,
 
+  customer: null,
+  customerBootstrapped: false,
+  otpPhone: null,
+  sendingOtp: false,
+  verifyingOtp: false,
+  authError: null,
+
   tick: () => set({ now: Date.now() }),
   setPushToken: (pushToken) => set({ pushToken }),
+
+  bootstrapCustomer: async () => {
+    try {
+      const customer = await fetchMyCustomer();
+      set({ customer, customerBootstrapped: true });
+    } catch {
+      set({ customerBootstrapped: true });
+    }
+  },
+
+  sendOtp: async (phone) => {
+    set({ sendingOtp: true, authError: null });
+    try {
+      await sendCustomerOtp(phone);
+      set({ sendingOtp: false, otpPhone: phone });
+    } catch (err) {
+      set({ sendingOtp: false, authError: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
+  verifyOtp: async (code) => {
+    const { otpPhone } = get();
+    if (!otpPhone) return;
+    set({ verifyingOtp: true, authError: null });
+    try {
+      const customer = await verifyCustomerOtp(otpPhone, code);
+      set({ customer, verifyingOtp: false, otpPhone: null });
+    } catch (err) {
+      set({ verifyingOtp: false, authError: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
+  cancelPhoneAuth: () => set({ otpPhone: null, authError: null }),
+
+  signOutCustomer: async () => {
+    await signOutCustomerAuth();
+    set({ customer: null });
+  },
 
   loadCatalog: async () => {
     set({ loading: true, error: null });
@@ -122,8 +184,8 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     })),
 
   placeOrder: async () => {
-    const { cart, items } = get();
-    if (!cart.length) return;
+    const { cart, items, customer } = get();
+    if (!cart.length || !customer) return;
     const brandId = items.find((i) => i.id === cart[0].menuItemId)?.brand_id;
     if (!brandId) return;
 
@@ -132,7 +194,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       const { id } = await insertDirectOrder({
         locationId: CUSTOMER_LOCATION_ID,
         brandId,
-        customerId: null, // no phone-OTP auth yet — see the build plan's Auth section
+        customerId: customer.id,
         promiseMinutes: 16,
         note: 'Direct app order · contactless drop.',
         lines: cart.map((c) => ({ menuItemId: c.menuItemId, qty: c.qty })),

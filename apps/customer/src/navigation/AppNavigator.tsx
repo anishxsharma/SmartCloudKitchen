@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -7,10 +8,12 @@ import { useCustomerStore } from '../store/customerStore';
 import { BrowseScreen } from '../screens/BrowseScreen';
 import { ItemScreen } from '../screens/ItemScreen';
 import { CartScreen } from '../screens/CartScreen';
+import { PhoneAuthScreen } from '../screens/PhoneAuthScreen';
 import { TrackScreen } from '../screens/TrackScreen';
 
 const Tab = createBottomTabNavigator();
 const MenuStack = createNativeStackNavigator();
+const BagStack = createNativeStackNavigator();
 
 function MenuStackNavigator() {
   return (
@@ -18,6 +21,15 @@ function MenuStackNavigator() {
       <MenuStack.Screen name="Browse" component={BrowseScreen} />
       <MenuStack.Screen name="Item" component={ItemScreen} />
     </MenuStack.Navigator>
+  );
+}
+
+function BagStackNavigator() {
+  return (
+    <BagStack.Navigator screenOptions={{ headerShown: false }}>
+      <BagStack.Screen name="CartHome" component={CartScreen} />
+      <BagStack.Screen name="PhoneAuth" component={PhoneAuthScreen} />
+    </BagStack.Navigator>
   );
 }
 
@@ -46,10 +58,16 @@ function TabBar({ state, navigation }: any) {
 }
 
 export function AppNavigator() {
+  const bootstrapCustomer = useCustomerStore((s) => s.bootstrapCustomer);
+
+  useEffect(() => {
+    bootstrapCustomer();
+  }, [bootstrapCustomer]);
+
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
       <Tab.Screen name="Menu" component={MenuStackNavigator} />
-      <Tab.Screen name="Bag" component={CartScreen} />
+      <Tab.Screen name="Bag" component={BagStackNavigator} />
       <Tab.Screen name="Orders" component={TrackScreen} />
     </Tab.Navigator>
   );

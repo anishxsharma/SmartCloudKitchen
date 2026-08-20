@@ -4,6 +4,7 @@ export * from './catalog';
 export * from './feedback';
 export * from './analytics';
 export * from './staff';
+export * from './customerAuth';
 export * from './offlineQueue';
 export * from './nativeAdapters';
 export * from './pushTokens';

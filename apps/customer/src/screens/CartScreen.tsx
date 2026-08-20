@@ -8,7 +8,7 @@ import { Header } from '../components/Header';
 
 export function CartScreen() {
   const navigation = useNavigation<any>();
-  const { cart, cartInc, cartDec, placeOrder, placingOrder, error } = useCustomerStore(
+  const { cart, cartInc, cartDec, placeOrder, placingOrder, error, signedInCustomer } = useCustomerStore(
     useShallow((s) => ({
       cart: s.cart,
       cartInc: s.cartInc,
@@ -16,6 +16,7 @@ export function CartScreen() {
       placeOrder: s.placeOrder,
       placingOrder: s.placingOrder,
       error: s.error,
+      signedInCustomer: s.customer,
     }))
   );
 
@@ -79,6 +80,10 @@ export function CartScreen() {
               <Pressable
                 disabled={placingOrder}
                 onPress={async () => {
+                  if (!signedInCustomer) {
+                    navigation.navigate('PhoneAuth');
+                    return;
+                  }
                   await placeOrder();
                   if (useCustomerStore.getState().trackOrderId) navigation.getParent()?.navigate('Orders');
                 }}
