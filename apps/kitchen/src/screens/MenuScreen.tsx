@@ -1,12 +1,29 @@
+import { useEffect } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BRANDS } from '@smartcloudkitchen/mock-data';
+import { BRANDS, LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
+import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function MenuScreen() {
   const { items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore();
+  const visibleLocationIds = useVisibleLocationIds();
+
+  const scopedBrands = BRANDS.filter((b) => visibleLocationIds.includes(b.location_id));
+  const locationLabel =
+    visibleLocationIds.length === 1
+      ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
+      : 'ALL LOCATIONS';
+
+  // Owner switched locations (or a manager's brand fell out of scope) —
+  // fall back to the first brand this screen can actually show.
+  useEffect(() => {
+    if (scopedBrands.length && !scopedBrands.some((b) => b.id === menuBrandId)) {
+      setMenuBrand(scopedBrands[0].id);
+    }
+  }, [scopedBrands, menuBrandId, setMenuBrand]);
 
   const brandItems = items.filter((i) => i.brand_id === menuBrandId);
   const outCount = brandItems.filter((i) => !i.available).length;
@@ -16,9 +33,9 @@ export function MenuScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: kitchen.bg }}>
-      <Header title="Menu & 86s" subtitle="HSR KITCHEN 04 · 4 BRANDS" />
+      <Header title="Menu & 86s" subtitle={`${locationLabel} · ${scopedBrands.length} BRANDS`} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {BRANDS.map((b) => {
+        {scopedBrands.map((b) => {
           const active = b.id === menuBrandId;
           return (
             <Pressable

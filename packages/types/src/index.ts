@@ -59,11 +59,15 @@ export interface Address {
   lng: number | null;
 }
 
-export interface Staff {
-  id: string;
-  location_id: string;
-  role: StaffRole;
-}
+/**
+ * A staff row is scoped one of two ways: line cooks and kitchen managers
+ * carry a single location_id; an owner instead carries org_id (and a null
+ * location_id), giving them every location under that org. Never both —
+ * enforced by a check constraint in the schema, mirrored here as a union.
+ */
+export type Staff =
+  | { id: string; display_name: string; role: 'line_cook' | 'kitchen_manager'; location_id: string; org_id: null }
+  | { id: string; display_name: string; role: 'owner'; location_id: null; org_id: string };
 
 export interface Order {
   id: string;

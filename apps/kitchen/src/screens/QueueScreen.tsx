@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { BRANDS } from '@smartcloudkitchen/mock-data';
+import { BRANDS, LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { OrderStage } from '@smartcloudkitchen/types';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
+import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 import { OrderCard } from '../components/OrderCard';
 import { TicketDetail } from '../components/TicketDetail';
@@ -23,6 +24,7 @@ export function QueueScreen() {
 
   const { orders, lines, items, now, filter, selectedOrderId, tick, setFilter, selectOrder, advanceOrder, toggleLineDone } =
     useKitchenStore();
+  const visibleLocationIds = useVisibleLocationIds();
 
   useEffect(() => {
     const id = setInterval(tick, 1000);
@@ -31,17 +33,24 @@ export function QueueScreen() {
 
   const brandName = (brandId: string) => BRANDS.find((b) => b.id === brandId)?.name ?? brandId;
 
+  const scopedOrders = orders.filter((o) => visibleLocationIds.includes(o.location_id));
+  const brandCount = BRANDS.filter((b) => visibleLocationIds.includes(b.location_id)).length;
+  const locationLabel =
+    visibleLocationIds.length === 1
+      ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
+      : 'ALL LOCATIONS';
+
   const counts: Record<'all' | OrderStage, number> = { all: 0, new: 0, cooking: 0, ready: 0, picked: 0 };
-  orders.forEach((o) => {
+  scopedOrders.forEach((o) => {
     counts.all += o.stage !== 'picked' ? 1 : 0;
     counts[o.stage] += 1;
   });
 
-  const visible = orders
+  const visible = scopedOrders
     .filter((o) => (filter === 'all' ? o.stage !== 'picked' : o.stage === filter))
     .sort((a, b) => new Date(a.placed_at).getTime() - new Date(b.placed_at).getTime());
 
-  const selected = orders.find((o) => o.id === selectedOrderId) ?? null;
+  const selected = scopedOrders.find((o) => o.id === selectedOrderId) ?? null;
 
   const list = (
     <View style={{ flex: 1 }}>
@@ -101,7 +110,7 @@ export function QueueScreen() {
   if (isTablet) {
     return (
       <View style={{ flex: 1, backgroundColor: kitchen.bg }}>
-        <Header title="Live queue" subtitle={`HSR KITCHEN 04 · ${counts.all} OPEN · 4 BRANDS`} />
+        <Header title="Live queue" subtitle={`${locationLabel} · ${counts.all} OPEN · ${brandCount} BRANDS`} />
         <View style={styles.splitRow}>
           <View style={styles.splitList}>{list}</View>
           <View style={styles.splitDetail}>
@@ -130,7 +139,7 @@ export function QueueScreen() {
     <View style={{ flex: 1, backgroundColor: kitchen.bg }}>
       {selected ? (
         <>
-          <Header title="Ticket" subtitle={`HSR KITCHEN 04 · ${counts.all} OPEN · 4 BRANDS`} />
+          <Header title="Ticket" subtitle={`${locationLabel} · ${counts.all} OPEN · ${brandCount} BRANDS`} />
           <TicketDetail
             order={selected}
             brandName={brandName(selected.brand_id)}
@@ -144,7 +153,7 @@ export function QueueScreen() {
         </>
       ) : (
         <>
-          <Header title="Live queue" subtitle={`HSR KITCHEN 04 · ${counts.all} OPEN · 4 BRANDS`} />
+          <Header title="Live queue" subtitle={`${locationLabel} · ${counts.all} OPEN · ${brandCount} BRANDS`} />
           <View style={styles.phonePad}>{list}</View>
         </>
       )}

@@ -1,35 +1,93 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { money } from '@smartcloudkitchen/domain';
-import { colorForBrand } from '@smartcloudkitchen/domain';
+import { LOCATIONS } from '@smartcloudkitchen/mock-data';
+import { money, colorForBrand } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
+import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
-const KPIS = [
-  { label: 'REVENUE', value: '₹1.34L', delta: '+18% vs last Thu', good: true },
-  { label: 'ORDERS', value: '156', delta: '+12% vs last Thu', good: true },
-  { label: 'AVG PREP', value: '11:40', delta: '−90s vs last Thu', good: true },
-  { label: 'MARGIN', value: '63%', delta: '−2 pts · chicken cost', good: false },
-];
+interface LocationSales {
+  revenueCents: number;
+  orders: number;
+  avgPrepSeconds: number;
+  marginPct: number;
+  revenueDelta: string;
+  ordersDelta: string;
+  prepDelta: string;
+  marginDelta: string;
+  hours: number[];
+  brands: { name: string; revCents: number; margin: number }[];
+}
 
-const HOURS = [4, 7, 9, 14, 22, 17, 9, 6, 8, 15, 26, 19];
 const HOUR_LABELS = ['11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-const HMAX = Math.max(...HOURS);
 
-const BRAND_TOTALS = [
-  { name: 'Curry Line', revCents: 4820000, margin: 62 },
-  { name: 'Slice Lab', revCents: 3910000, margin: 68 },
-  { name: 'Bowl & Bird', revCents: 2740000, margin: 59 },
-  { name: 'Wok Theory', revCents: 1890000, margin: 64 },
-];
-const BMAX = BRAND_TOTALS[0].revCents;
+// Fixture numbers per location — a real Sales screen reads these from
+// aggregated Postgres views instead. Deltas ("+18% vs last Thu") aren't
+// combined across locations when "All locations" is selected since that
+// needs real historical data to mean anything; the primary location's
+// deltas are shown as a representative figure in that case.
+const SALES_BY_LOCATION: Record<string, LocationSales> = {
+  loc1: {
+    revenueCents: 13400000, orders: 156, avgPrepSeconds: 700, marginPct: 63,
+    revenueDelta: '+18% vs last Thu', ordersDelta: '+12% vs last Thu', prepDelta: '−90s vs last Thu', marginDelta: '−2 pts · chicken cost',
+    hours: [4, 7, 9, 14, 22, 17, 9, 6, 8, 15, 26, 19],
+    brands: [
+      { name: 'Curry Line', revCents: 4820000, margin: 62 },
+      { name: 'Slice Lab', revCents: 3910000, margin: 68 },
+      { name: 'Bowl & Bird', revCents: 2740000, margin: 59 },
+      { name: 'Wok Theory', revCents: 1890000, margin: 64 },
+    ],
+  },
+  loc2: {
+    revenueCents: 4180000, orders: 52, avgPrepSeconds: 650, marginPct: 61,
+    revenueDelta: '+9% vs last Thu', ordersDelta: '+6% vs last Thu', prepDelta: '−20s vs last Thu', marginDelta: '+1 pt vs last Thu',
+    hours: [1, 2, 2, 4, 6, 5, 3, 2, 2, 4, 7, 5],
+    brands: [
+      { name: 'Curry Line', revCents: 2480000, margin: 60 },
+      { name: 'Wok Theory', revCents: 1700000, margin: 63 },
+    ],
+  },
+};
+
+function mmss(totalSeconds: number): string {
+  return `${String(Math.floor(totalSeconds / 60)).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`;
+}
 
 export function SalesScreen() {
+  const visibleLocationIds = useVisibleLocationIds();
+  const multiLocation = visibleLocationIds.length > 1;
+
+  const locationLabel = multiLocation
+    ? 'ALL LOCATIONS'
+    : (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '');
+
+  const perLocation = visibleLocationIds.map((id) => SALES_BY_LOCATION[id]).filter(Boolean);
+  const primary = perLocation[0] ?? SALES_BY_LOCATION.loc1;
+
+  const revenueCents = perLocation.reduce((a, l) => a + l.revenueCents, 0);
+  const orders = perLocation.reduce((a, l) => a + l.orders, 0);
+  const hmaxLen = Math.max(...perLocation.map((l) => l.hours.length));
+  const hours = Array.from({ length: hmaxLen }, (_, i) => perLocation.reduce((a, l) => a + (l.hours[i] ?? 0), 0));
+  const hmax = Math.max(...hours);
+
+  const kpis = [
+    { label: 'REVENUE', value: money(revenueCents), delta: primary.revenueDelta, good: true },
+    { label: 'ORDERS', value: String(orders), delta: primary.ordersDelta, good: true },
+    { label: 'AVG PREP', value: mmss(primary.avgPrepSeconds), delta: primary.prepDelta, good: true },
+    { label: 'MARGIN', value: `${primary.marginPct}%`, delta: primary.marginDelta, good: !primary.marginDelta.startsWith('−') },
+  ];
+
+  const brandRows = perLocation.flatMap((l, idx) => {
+    const locName = LOCATIONS.find((loc) => loc.id === visibleLocationIds[idx])?.name ?? '';
+    return l.brands.map((b) => ({ ...b, key: `${visibleLocationIds[idx]}-${b.name}`, suffix: multiLocation ? ` · ${locName}` : '' }));
+  });
+  const bmax = Math.max(...brandRows.map((b) => b.revCents));
+
   return (
     <View style={{ flex: 1, backgroundColor: kitchen.bg }}>
-      <Header title="Today" subtitle="HSR KITCHEN 04 · 4 BRANDS" />
+      <Header title="Today" subtitle={locationLabel} />
       <ScrollView contentContainerStyle={styles.wrap}>
         <View style={styles.kpiGrid}>
-          {KPIS.map((k) => (
+          {kpis.map((k) => (
             <View key={k.label} style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>{k.label}</Text>
               <Text style={styles.kpiValue}>{k.value}</Text>
@@ -41,13 +99,13 @@ export function SalesScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.sectionLabel}>ORDERS BY HOUR</Text>
           <View style={styles.chartRow}>
-            {HOURS.map((v, idx) => (
+            {hours.map((v, idx) => (
               <View key={idx} style={styles.chartCol}>
                 <View style={styles.chartBarTrack}>
                   <View
                     style={[
                       styles.chartBar,
-                      { height: `${Math.round((v / HMAX) * 100)}%`, backgroundColor: v === HMAX ? kitchen.accent : '#3E382E' },
+                      { height: `${Math.round((v / hmax) * 100)}%`, backgroundColor: v === hmax ? kitchen.accent : '#3E382E' },
                     ]}
                   />
                 </View>
@@ -59,20 +117,20 @@ export function SalesScreen() {
 
         <Text style={[styles.sectionLabel, { paddingLeft: 2 }]}>BRAND CONTRIBUTION</Text>
         <View style={{ gap: 10 }}>
-          {BRAND_TOTALS.map((b) => {
-            const pct = Math.round((b.revCents / BMAX) * 100);
-            const orders = Math.round(b.revCents / 34000);
+          {brandRows.map((b) => {
+            const pct = Math.round((b.revCents / bmax) * 100);
+            const orderCount = Math.round(b.revCents / 34000);
             return (
-              <View key={b.name} style={styles.brandRow}>
+              <View key={b.key} style={styles.brandRow}>
                 <View style={styles.brandTop}>
-                  <Text style={styles.brandName}>{b.name}</Text>
+                  <Text style={styles.brandName}>{b.name}{b.suffix}</Text>
                   <Text style={styles.brandRev}>{money(b.revCents)}</Text>
                 </View>
                 <View style={styles.track}>
                   <View style={[styles.fill, { width: `${pct}%`, backgroundColor: colorForBrand(b.name) }]} />
                 </View>
                 <Text style={styles.brandFoot}>
-                  {b.margin}% margin · {orders} orders
+                  {b.margin}% margin · {orderCount} orders
                 </Text>
               </View>
             );

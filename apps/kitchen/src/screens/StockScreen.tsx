@@ -1,18 +1,27 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
+import { useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function StockScreen() {
   const { stock, items, stockOrdered, requestReorder, toggleItemAvailable } = useKitchenStore();
+  const visibleLocationIds = useVisibleLocationIds();
 
-  const withPct = stock.map((s) => ({ ...s, pct: Math.round((s.qty / s.par) * 100) }));
+  const scopedStock = stock.filter((s) => visibleLocationIds.includes(s.location_id));
+  const locationLabel =
+    visibleLocationIds.length === 1
+      ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
+      : 'ALL LOCATIONS';
+
+  const withPct = scopedStock.map((s) => ({ ...s, pct: Math.round((s.qty / s.par) * 100) }));
   const lowCount = withPct.filter((s) => s.pct < 30).length;
   const okCount = withPct.length - lowCount;
 
   return (
     <View style={{ flex: 1, backgroundColor: kitchen.bg }}>
-      <Header title="Inventory" subtitle="HSR KITCHEN 04 · 4 BRANDS" />
+      <Header title="Inventory" subtitle={locationLabel} />
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
           <Text style={[styles.summaryValue, { color: kitchen.warn }]}>{lowCount}</Text>

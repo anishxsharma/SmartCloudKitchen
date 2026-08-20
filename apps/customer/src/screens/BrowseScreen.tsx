@@ -1,10 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BRANDS, MENU_ITEMS } from '@smartcloudkitchen/mock-data';
+import { BRANDS, CUSTOMER_LOCATION_ID, MENU_ITEMS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
 import { Header } from '../components/Header';
+
+const BRANDS_HERE = BRANDS.filter((b) => b.location_id === CUSTOMER_LOCATION_ID);
 
 export function BrowseScreen() {
   const navigation = useNavigation<any>();
@@ -13,9 +15,9 @@ export function BrowseScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: customer.bg }}>
-      <Header title={BRANDS.find((b) => b.id === shopBrandId)?.name ?? ''} subtitle="DELIVERS IN 25–35 MIN · HSR" />
+      <Header title={BRANDS_HERE.find((b) => b.id === shopBrandId)?.name ?? ''} subtitle="DELIVERS IN 25–35 MIN · HSR" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {BRANDS.map((b) => {
+        {BRANDS_HERE.map((b) => {
           const active = b.id === shopBrandId;
           return (
             <Pressable

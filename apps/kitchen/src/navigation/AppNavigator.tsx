@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
+import { canManageMenuAndStock, useCurrentStaff } from '../store/sessionStore';
 import { QueueScreen } from '../screens/QueueScreen';
 import { MenuScreen } from '../screens/MenuScreen';
 import { StockScreen } from '../screens/StockScreen';
@@ -32,12 +33,19 @@ function TabBar({ state, navigation }: any) {
 }
 
 export function AppNavigator() {
+  // Line cooks work the queue; menu/stock/sales are manager+owner
+  // decisions — mirrors the manager_update_menu_items / manager_update_stock
+  // RLS policies, so the app's gating matches what the database would
+  // reject anyway rather than inventing its own rule.
+  const staff = useCurrentStaff();
+  const canManage = canManageMenuAndStock(staff);
+
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
       <Tab.Screen name="Queue" component={QueueScreen} />
-      <Tab.Screen name="Menu" component={MenuScreen} />
-      <Tab.Screen name="Stock" component={StockScreen} />
-      <Tab.Screen name="Sales" component={SalesScreen} />
+      {canManage ? <Tab.Screen name="Menu" component={MenuScreen} /> : null}
+      {canManage ? <Tab.Screen name="Stock" component={StockScreen} /> : null}
+      {canManage ? <Tab.Screen name="Sales" component={SalesScreen} /> : null}
     </Tab.Navigator>
   );
 }
