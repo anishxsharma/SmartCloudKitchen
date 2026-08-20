@@ -81,6 +81,9 @@ export interface Order {
   stage: OrderStage;
   promise_minutes: number;
   placed_at: string;
+  /** Set by a DB trigger the instant stage first becomes 'ready' — drives the real avg-prep-time metric. */
+  ready_at?: string | null;
+  picked_at?: string | null;
   delivery_address_id: string | null;
   note?: string | null;
 }
@@ -92,6 +95,9 @@ export interface OrderLine {
   qty: number;
   note: string | null;
   done: boolean;
+  /** Snapshotted from menu_items at order time — a later price/cost edit must never reprice a past order. */
+  price_cents: number;
+  cost_cents: number;
 }
 
 /** Order with its lines eager-loaded — the shape both apps actually render. */
@@ -106,4 +112,31 @@ export interface OrderFeedback {
   rating: number;
   comment: string | null;
   created_at: string;
+}
+
+/** Rows from the daily_sales_by_location view — real numbers, not fixtures. */
+export interface DailyLocationSales {
+  location_id: string;
+  day: string;
+  completed_orders: number;
+  revenue_cents: number;
+  cost_cents: number;
+  avg_prep_seconds: number | null;
+}
+
+export interface DailyBrandSales {
+  location_id: string;
+  brand_id: string;
+  brand_name: string;
+  day: string;
+  completed_orders: number;
+  revenue_cents: number;
+  cost_cents: number;
+}
+
+export interface HourlyOrders {
+  location_id: string;
+  day: string;
+  hour: number;
+  order_count: number;
 }

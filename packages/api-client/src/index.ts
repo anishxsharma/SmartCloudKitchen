@@ -2,6 +2,7 @@ export { getSupabase } from './client';
 export * from './orders';
 export * from './catalog';
 export * from './feedback';
+export * from './analytics';
 export * from './staff';
 export * from './offlineQueue';
 export * from './nativeAdapters';
