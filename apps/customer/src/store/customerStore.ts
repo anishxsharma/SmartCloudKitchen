@@ -22,8 +22,11 @@ interface CustomerState {
   lines: OrderLine[];
   trackOrderId: string | null;
   seq: number;
+  /** Set once usePushRegistration resolves — see App.tsx. */
+  pushToken: string | null;
 
   tick: () => void;
+  setPushToken: (token: string) => void;
   setShopBrand: (brandId: string) => void;
   openItem: (itemId: string) => void;
   backToBrowse: () => void;
@@ -48,8 +51,10 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   lines: [],
   trackOrderId: null,
   seq: 1047,
+  pushToken: null,
 
   tick: () => set({ now: Date.now() }),
+  setPushToken: (pushToken) => set({ pushToken }),
   setShopBrand: (shopBrandId) => set({ shopBrandId }),
   openItem: (itemId) => set({ itemId, qty: 1 }),
   backToBrowse: () => set({ itemId: null }),
