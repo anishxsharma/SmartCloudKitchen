@@ -1,41 +1,18 @@
+import { NavigationContainer } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import { kitchen, type } from '@smartcloudkitchen/design-tokens';
+import { AppNavigator } from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.eyebrow}>SMARTCLOUDKITCHEN</Text>
-      <Text style={styles.title}>Kitchen console</Text>
-      <Text style={styles.sub}>Phase 0 scaffold — screens land in Phase 1.</Text>
-      <StatusBar style="light" />
-    </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <AppNavigator />
+          <StatusBar style="light" />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: kitchen.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  eyebrow: {
-    fontFamily: type.mono,
-    fontSize: 11,
-    letterSpacing: 2,
-    color: kitchen.textFaint,
-  },
-  title: {
-    fontFamily: type.display,
-    fontWeight: '800',
-    fontSize: 28,
-    color: kitchen.text,
-  },
-  sub: {
-    fontFamily: type.display,
-    fontSize: 13,
-    color: kitchen.textSoft,
-  },
-});
