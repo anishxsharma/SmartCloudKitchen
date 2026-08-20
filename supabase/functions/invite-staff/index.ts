@@ -7,14 +7,22 @@
 // the caller's own JWT is used only to look up who's calling, never
 // trusted for what they're allowed to do.
 //
-// A cook or manager clicking the invite email lands on
-// sckkitchen://set-password#access_token=...&refresh_token=..., which
-// the app exchanges for a session (see api-client's staff.ts) and uses
-// to set their own password — nobody but the new hire ever sees it.
+// A cook or manager clicking the invite email lands on set-password
+// with the session tokens in the URL fragment
+// (…#access_token=…&refresh_token=…), which the app exchanges for a
+// session (see api-client's staff.ts / useInviteDeepLink) and uses to
+// set their own password — nobody but the new hire ever sees it.
+//
+// Defaults to the native app's deep link; once the kitchen web build is
+// deployed, set the STAFF_INVITE_REDIRECT_URL secret
+// (`supabase secrets set STAFF_INVITE_REDIRECT_URL=https://...`) to
+// send new invites there instead — same fragment-token contract works
+// on web (useInviteDeepLink reads location.href there), no code change
+// needed on either side.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const INVITE_REDIRECT_URL = 'sckkitchen://set-password';
+const INVITE_REDIRECT_URL = Deno.env.get('STAFF_INVITE_REDIRECT_URL') ?? 'sckkitchen://set-password';
 const ROLES = ['line_cook', 'kitchen_manager', 'owner'] as const;
 type Role = (typeof ROLES)[number];
 
