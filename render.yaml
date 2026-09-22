@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: smartcloudkitchen-order-ingestion
+    runtime: docker
+    plan: free
+    rootDir: services/order-ingestion
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8787
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ZIPP_WEBHOOK_SECRET
+        sync: false
+      - key: MUNCHLY_WEBHOOK_SECRET
+        sync: false
