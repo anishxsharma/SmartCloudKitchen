@@ -14,9 +14,10 @@ SmartCloudKitchen runs four virtual restaurant brands out of one kitchen
 — Curry Line, Wok Theory, Bowl & Bird, and Slice Lab — cooked to order
 and delivered together, even if you mix brands in one bag.
 
-Browse the menu, add what you want, and check out — no account required
-to place your first order. Once it's in, watch it move through the
-kitchen in real time: accepted, cooking, packed and ready, on the way.
+Browse the menu, add what you want, and check out — verify with a quick
+text-message code or sign in with Google. Once it's in, watch it move
+through the kitchen in real time: accepted, cooking, packed and ready,
+on the way.
 The status you see is the same one the kitchen is looking at, updated
 the moment they bump your ticket.
 
@@ -38,12 +39,15 @@ Food & Drink
 - Digital purchases: no in-app purchases; the app itself doesn't process
   payment yet (see the build plan's payment-integration note)
 
-## Data safety form — matches privacy-policy.md
-- Collected: order contents, delivery notes, feedback ratings/comments,
-  device push token (optional, notification permission)
+## Data safety form — matches the privacy policy
+- Collected: phone number or email (whichever sign-in method used), order
+  contents, delivery notes, feedback ratings/comments, device push token
+  (optional, notification permission)
 - Not collected: precise location, payment info, advertising ID,
   contacts, photos/media, browsing history
-- Shared with third parties: no
+- Third-party services: Twilio (delivers the phone verification code;
+  receives the phone number only), Google Sign-In (returns an email
+  address for the "Sign in with Google" path) — not shared for
+  advertising/marketing purposes
 - Encrypted in transit: yes (HTTPS/TLS to Supabase)
 - Users can request deletion: yes, via the contact in the privacy policy
-  (no persistent account exists yet to delete in-app)
