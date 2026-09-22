@@ -15,7 +15,7 @@ packages/
   design-tokens/       colors, Archivo/IBM Plex Mono type scale — ported from the prototype
   types/                 shared TS types matching the Postgres schema
 services/
-  order-ingestion/     aggregator webhook handler (Phase 3, not built yet)
+  order-ingestion/     aggregator webhook handler — deployed to Render
 supabase/
   migrations/           schema as versioned SQL
 ```
