@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import { create } from 'zustand';
 import {
   consumeOAuthSession,
+  errorMessage,
   fetchBrands,
   fetchFeedbackForOrder,
   fetchMenuItems,
@@ -146,7 +147,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       await sendCustomerOtp(phone);
       set({ sendingOtp: false, otpPhone: phone });
     } catch (err) {
-      set({ sendingOtp: false, authError: err instanceof Error ? err.message : String(err) });
+      set({ sendingOtp: false, authError: errorMessage(err) });
     }
   },
 
@@ -158,7 +159,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       const customer = await verifyCustomerOtp(otpPhone, code);
       set({ customer, verifyingOtp: false, otpPhone: null });
     } catch (err) {
-      set({ verifyingOtp: false, authError: err instanceof Error ? err.message : String(err) });
+      set({ verifyingOtp: false, authError: errorMessage(err) });
     }
   },
 
@@ -214,7 +215,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       }
       await get().completeGoogleSession(params.access_token, params.refresh_token);
     } catch (err) {
-      set({ googleSigningIn: false, authError: err instanceof Error ? err.message : String(err) });
+      set({ googleSigningIn: false, authError: errorMessage(err) });
     }
   },
 
@@ -229,7 +230,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         set({ googleSigningIn: false, pendingGoogleProfile: { userId, displayName } });
       }
     } catch (err) {
-      set({ googleSigningIn: false, authError: err instanceof Error ? err.message : String(err) });
+      set({ googleSigningIn: false, authError: errorMessage(err) });
     }
   },
 
@@ -241,7 +242,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       const customer = await upsertCustomerProfile(pendingGoogleProfile.userId, phone, pendingGoogleProfile.displayName);
       set({ customer, finishingGoogleSignup: false, pendingGoogleProfile: null });
     } catch (err) {
-      set({ finishingGoogleSignup: false, authError: err instanceof Error ? err.message : String(err) });
+      set({ finishingGoogleSignup: false, authError: errorMessage(err) });
     }
   },
 
@@ -257,7 +258,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       const items = await fetchMenuItems(brands.map((b) => b.id));
       set((s) => ({ brands, items, loading: false, shopBrandId: s.shopBrandId || (brands[0]?.id ?? '') }));
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+      set({ loading: false, error: errorMessage(err) });
     }
   },
 
@@ -319,7 +320,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         feedback: null,
       }));
     } catch (err) {
-      set({ placingOrder: false, error: err instanceof Error ? err.message : String(err) });
+      set({ placingOrder: false, error: errorMessage(err) });
     }
   },
 
@@ -349,7 +350,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         feedback: { id: '', order_id: trackOrderId, customer_id: null, rating, comment, created_at: new Date().toISOString() },
       });
     } catch (err) {
-      set({ feedbackSubmitting: false, error: err instanceof Error ? err.message : String(err) });
+      set({ feedbackSubmitting: false, error: errorMessage(err) });
     }
   },
 }));

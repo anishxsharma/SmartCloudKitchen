@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { consumeInviteSession, fetchMyStaff, setOwnPassword, signInStaff, signOutStaff } from '@smartcloudkitchen/api-client';
+import { consumeInviteSession, errorMessage, fetchMyStaff, setOwnPassword, signInStaff, signOutStaff } from '@smartcloudkitchen/api-client';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { Staff } from '@smartcloudkitchen/types';
 
@@ -38,7 +38,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       const staff = await fetchMyStaff();
       set({ staff, loading: false });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+      set({ loading: false, error: errorMessage(err) });
     }
   },
 
@@ -49,7 +49,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       const staff = await fetchMyStaff();
       set({ staff, loading: false, selectedLocationId: null });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+      set({ loading: false, error: errorMessage(err) });
     }
   },
 
@@ -66,7 +66,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       await consumeInviteSession(accessToken, refreshToken);
       set({ awaitingNewPassword: true, loading: false });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+      set({ loading: false, error: errorMessage(err) });
     }
   },
 
@@ -77,7 +77,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       const staff = await fetchMyStaff();
       set({ staff, loading: false, awaitingNewPassword: false });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+      set({ loading: false, error: errorMessage(err) });
     }
   },
 }));

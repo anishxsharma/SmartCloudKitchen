@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   advanceOrder as apiAdvanceOrder,
+  errorMessage,
   fetchBrands,
   fetchMenuItems,
   fetchOpenOrders,
@@ -119,14 +120,14 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
 
       set({ unsubscribe: () => { unsubOrders(); unsubLines(); } });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+      set({ loading: false, error: errorMessage(err) });
     }
   },
 
   advanceOrder: (orderId) => {
     const order = get().orders.find((o) => o.id === orderId);
     if (!order) return;
-    apiAdvanceOrder(orderId, order.stage).catch((err) => set({ error: String(err) }));
+    apiAdvanceOrder(orderId, order.stage).catch((err) => set({ error: errorMessage(err) }));
   },
 
   toggleLineDone: (lineId) => {
@@ -134,7 +135,7 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
     if (!line) return;
     const done = !line.done;
     set((s) => ({ lines: s.lines.map((l) => (l.id === lineId ? { ...l, done } : l)) }));
-    apiToggleOrderLine(lineId, done).catch((err) => set({ error: String(err) }));
+    apiToggleOrderLine(lineId, done).catch((err) => set({ error: errorMessage(err) }));
   },
 
   toggleItemAvailable: (itemId) => {
@@ -142,7 +143,7 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
     if (!item) return;
     const available = !item.available;
     set((s) => ({ items: s.items.map((i) => (i.id === itemId ? { ...i, available } : i)) }));
-    setMenuItemAvailable(itemId, available).catch((err) => set({ error: String(err) }));
+    setMenuItemAvailable(itemId, available).catch((err) => set({ error: errorMessage(err) }));
   },
 
   // No purchase-order table yet — this stays a local "I've requested it"
@@ -156,7 +157,7 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
       const items = await fetchMenuItems(brandIds);
       set({ items });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err) });
+      set({ error: errorMessage(err) });
     }
   },
 }));

@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { createMenuItem, updateMenuItem, uploadMenuItemPhoto } from '@smartcloudkitchen/api-client';
+import { createMenuItem, errorMessage, updateMenuItem, uploadMenuItemPhoto } from '@smartcloudkitchen/api-client';
 import type { Station } from '@smartcloudkitchen/types';
 import { kitchen, minTapTarget, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
@@ -103,7 +103,7 @@ export function MenuItemFormScreen() {
       await refreshItems();
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Could not save', err instanceof Error ? err.message : String(err));
+      Alert.alert('Could not save', errorMessage(err));
     } finally {
       setSaving(false);
     }

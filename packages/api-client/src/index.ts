@@ -1,4 +1,5 @@
 export { getSupabase } from './client';
+export { errorMessage } from './errorMessage';
 export * from './orders';
 export * from './catalog';
 export * from './feedback';

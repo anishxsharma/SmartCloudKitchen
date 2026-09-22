@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { fetchScopedStaff, inviteStaff } from '@smartcloudkitchen/api-client';
+import { errorMessage, fetchScopedStaff, inviteStaff } from '@smartcloudkitchen/api-client';
 import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { Staff, StaffRole } from '@smartcloudkitchen/types';
 import { kitchen, minTapTarget, type } from '@smartcloudkitchen/design-tokens';
@@ -50,7 +50,7 @@ export function StaffScreen() {
       Alert.alert('Invite sent', `${displayName.trim()} will get an email to set their password.`);
       await loadTeam();
     } catch (err) {
-      Alert.alert('Could not send invite', err instanceof Error ? err.message : String(err));
+      Alert.alert('Could not send invite', errorMessage(err));
     } finally {
       setInviting(false);
     }
