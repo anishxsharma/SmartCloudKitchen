@@ -14,6 +14,13 @@ export async function fetchLocationsForOrg(orgId: string): Promise<Location[]> {
   return data ?? [];
 }
 
+/** Every location across every business on the platform — the customer app's "choose a kitchen" picker (public_read_locations, 0019). */
+export async function fetchAllLocations(): Promise<Location[]> {
+  const { data, error } = await getSupabase().from('locations').select('*').order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
 export interface CreateLocationInput {
   orgId: string;
   name: string;

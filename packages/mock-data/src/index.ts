@@ -1,27 +1,14 @@
-import type { Location, Organization } from '@smartcloudkitchen/types';
-
 /**
  * What's left once the real Supabase project is wired in — see
  * supabase/seed.sql for the matching catalog data (same ids) and
  * scripts/seed-staff.ts for the matching Auth users. Brands, menu items,
- * stock, and orders all come from live queries now (packages/api-client);
- * this file only keeps the handful of ids/labels that are genuinely
- * static reference data, not content a manager could change.
+ * stock, orders, and now organizations/locations too all come from live
+ * queries (packages/api-client's fetchOrganizations/fetchLocationsForOrg/
+ * fetchAllLocations) — this platform is multi-tenant, so a hardcoded
+ * single org/location list here would hide every business onboarded
+ * after this file was written. Only genuinely static dev-fixture data
+ * (the seeded staff accounts) is left.
  */
-
-export const ORG: Organization = { id: '11111111-0000-0000-0000-000000000001', name: 'SmartCloudKitchen' };
-
-export const LOCATIONS: Location[] = [
-  { id: '11111111-0000-0000-0000-000000000010', org_id: ORG.id, name: 'HSR Kitchen 04', timezone: 'Asia/Kolkata' },
-  { id: '11111111-0000-0000-0000-000000000020', org_id: ORG.id, name: 'Indiranagar Kitchen 02', timezone: 'Asia/Kolkata' },
-];
-
-/**
- * Which kitchen serves a given customer app session — resolved from their
- * delivery address in the real app (see the build plan's address model);
- * fixed here since there's no real address flow yet.
- */
-export const CUSTOMER_LOCATION_ID = LOCATIONS[0].id;
 
 /**
  * Dev-only bridge to real Supabase Auth sessions on the seeded staff

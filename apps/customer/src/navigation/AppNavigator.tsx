@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { customer, type } from '@smartcloudkitchen/design-tokens';
 import { useCustomerStore } from '../store/customerStore';
+import { ChooseKitchenScreen } from '../screens/ChooseKitchenScreen';
 import { BrowseScreen } from '../screens/BrowseScreen';
 import { ItemScreen } from '../screens/ItemScreen';
 import { CartScreen } from '../screens/CartScreen';
@@ -59,10 +60,26 @@ function TabBar({ state, navigation }: any) {
 
 export function AppNavigator() {
   const bootstrapCustomer = useCustomerStore((s) => s.bootstrapCustomer);
+  const bootstrapLocation = useCustomerStore((s) => s.bootstrapLocation);
+  const locationBootstrapped = useCustomerStore((s) => s.locationBootstrapped);
+  const selectedLocationId = useCustomerStore((s) => s.selectedLocationId);
 
   useEffect(() => {
     bootstrapCustomer();
-  }, [bootstrapCustomer]);
+    bootstrapLocation();
+  }, [bootstrapCustomer, bootstrapLocation]);
+
+  if (!locationBootstrapped) {
+    return (
+      <View style={{ flex: 1, backgroundColor: customer.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={customer.text} />
+      </View>
+    );
+  }
+
+  if (!selectedLocationId) {
+    return <ChooseKitchenScreen />;
+  }
 
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>

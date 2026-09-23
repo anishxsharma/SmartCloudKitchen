@@ -1,10 +1,12 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { create } from 'zustand';
 import {
   consumeOAuthSession,
   errorMessage,
+  fetchAllLocations,
   fetchBrands,
   fetchFeedbackForOrder,
   fetchMenuItems,
@@ -19,9 +21,10 @@ import {
   upsertCustomerProfile,
   verifyCustomerOtp,
 } from '@smartcloudkitchen/api-client';
-import { CUSTOMER_LOCATION_ID } from '@smartcloudkitchen/mock-data';
-import type { Brand, Customer, MenuItem, Order, OrderFeedback, OrderLine } from '@smartcloudkitchen/types';
+import type { Brand, Customer, Location, MenuItem, Order, OrderFeedback, OrderLine } from '@smartcloudkitchen/types';
 import { OAUTH_MESSAGE_TYPE } from '../hooks/useOAuthPopupSelfClose';
+
+const SELECTED_LOCATION_STORAGE_KEY = 'sck-customer-selected-location-id';
 
 function parseHashParams(url: string): Record<string, string> {
   const hashIndex = url.indexOf('#');
@@ -47,6 +50,12 @@ interface CustomerState {
   now: number;
   loading: boolean;
   error: string | null;
+  /** Which business/location this session is ordering from — shared marketplace app, so this is picked, not baked in. Persisted in AsyncStorage across app opens. */
+  selectedLocationId: string | null;
+  /** True once the AsyncStorage check for a previously-picked location has resolved — before this, don't show the picker (would flash it even for a returning customer). */
+  locationBootstrapped: boolean;
+  locations: Location[];
+  locationsLoading: boolean;
   brands: Brand[];
   items: MenuItem[];
   shopBrandId: string;
@@ -77,6 +86,10 @@ interface CustomerState {
 
   tick: () => void;
   setPushToken: (token: string) => void;
+  bootstrapLocation: () => Promise<void>;
+  loadLocations: () => Promise<void>;
+  selectLocation: (locationId: string) => Promise<void>;
+  changeLocation: () => Promise<void>;
   loadCatalog: () => Promise<void>;
   bootstrapCustomer: () => Promise<void>;
   sendOtp: (phone: string) => Promise<void>;
@@ -104,6 +117,10 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   now: Date.now(),
   loading: true,
   error: null,
+  selectedLocationId: null,
+  locationBootstrapped: false,
+  locations: [],
+  locationsLoading: true,
   brands: [],
   items: [],
   shopBrandId: '',
@@ -131,6 +148,46 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
 
   tick: () => set({ now: Date.now() }),
   setPushToken: (pushToken) => set({ pushToken }),
+
+  bootstrapLocation: async () => {
+    try {
+      const stored = await AsyncStorage.getItem(SELECTED_LOCATION_STORAGE_KEY);
+      set({ selectedLocationId: stored, locationBootstrapped: true });
+      if (stored) get().loadCatalog();
+    } catch {
+      set({ locationBootstrapped: true });
+    }
+    get().loadLocations();
+  },
+
+  loadLocations: async () => {
+    set({ locationsLoading: true });
+    try {
+      const locations = await fetchAllLocations();
+      set({ locations, locationsLoading: false });
+    } catch (err) {
+      set({ locationsLoading: false, error: errorMessage(err) });
+    }
+  },
+
+  selectLocation: async (locationId) => {
+    set({ selectedLocationId: locationId });
+    try {
+      await AsyncStorage.setItem(SELECTED_LOCATION_STORAGE_KEY, locationId);
+    } catch {
+      // Non-fatal — worst case the picker shows again next app open.
+    }
+    await get().loadCatalog();
+  },
+
+  changeLocation: async () => {
+    set({ selectedLocationId: null, brands: [], items: [], cart: [], shopBrandId: '' });
+    try {
+      await AsyncStorage.removeItem(SELECTED_LOCATION_STORAGE_KEY);
+    } catch {
+      // Non-fatal.
+    }
+  },
 
   bootstrapCustomer: async () => {
     try {
@@ -252,9 +309,11 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   },
 
   loadCatalog: async () => {
+    const { selectedLocationId } = get();
+    if (!selectedLocationId) return;
     set({ loading: true, error: null });
     try {
-      const brands = await fetchBrands([CUSTOMER_LOCATION_ID]);
+      const brands = await fetchBrands([selectedLocationId]);
       const items = await fetchMenuItems(brands.map((b) => b.id));
       set((s) => ({ brands, items, loading: false, shopBrandId: s.shopBrandId || (brands[0]?.id ?? '') }));
     } catch (err) {
@@ -295,15 +354,15 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     })),
 
   placeOrder: async () => {
-    const { cart, items, customer } = get();
-    if (!cart.length || !customer) return;
+    const { cart, items, customer, selectedLocationId } = get();
+    if (!cart.length || !customer || !selectedLocationId) return;
     const brandId = items.find((i) => i.id === cart[0].menuItemId)?.brand_id;
     if (!brandId) return;
 
     set({ placingOrder: true, error: null });
     try {
       const { id } = await insertDirectOrder({
-        locationId: CUSTOMER_LOCATION_ID,
+        locationId: selectedLocationId,
         brandId,
         customerId: customer.id,
         promiseMinutes: 16,

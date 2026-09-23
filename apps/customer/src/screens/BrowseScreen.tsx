@@ -13,19 +13,24 @@ export function BrowseScreen() {
   // its own slice — it stays mounted via bottom-tabs even off-screen, and
   // TrackScreen's 1s tick was re-rendering it (and Item/Cart) needlessly
   // every second for the whole session.
-  const { brands, items, loading, error, shopBrandId, setShopBrand, openItem, loadCatalog } = useCustomerStore(
-    useShallow((s) => ({
-      brands: s.brands,
-      items: s.items,
-      loading: s.loading,
-      error: s.error,
-      shopBrandId: s.shopBrandId,
-      setShopBrand: s.setShopBrand,
-      openItem: s.openItem,
-      loadCatalog: s.loadCatalog,
-    }))
-  );
+  const { brands, items, loading, error, shopBrandId, setShopBrand, openItem, loadCatalog, locations, selectedLocationId, changeLocation } =
+    useCustomerStore(
+      useShallow((s) => ({
+        brands: s.brands,
+        items: s.items,
+        loading: s.loading,
+        error: s.error,
+        shopBrandId: s.shopBrandId,
+        setShopBrand: s.setShopBrand,
+        openItem: s.openItem,
+        loadCatalog: s.loadCatalog,
+        locations: s.locations,
+        selectedLocationId: s.selectedLocationId,
+        changeLocation: s.changeLocation,
+      }))
+    );
   const brandItems = items.filter((i) => i.brand_id === shopBrandId);
+  const kitchenName = locations.find((l) => l.id === selectedLocationId)?.name ?? '';
 
   useEffect(() => {
     loadCatalog();
@@ -33,7 +38,7 @@ export function BrowseScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: customer.bg }}>
-      <Header title={brands.find((b) => b.id === shopBrandId)?.name ?? 'Storefront'} subtitle="DELIVERS IN 25–35 MIN · HSR" />
+      <Header title={brands.find((b) => b.id === shopBrandId)?.name ?? 'Storefront'} subtitle={kitchenName} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {brands.map((b) => {
           const active = b.id === shopBrandId;
@@ -49,9 +54,16 @@ export function BrowseScreen() {
         })}
       </ScrollView>
 
-      <Text style={styles.blurb}>
-        Cooked to order in our HSR kitchen. Four kitchens, one bag — mix brands and it still arrives together.
-      </Text>
+      <View style={styles.blurbRow}>
+        <Text style={styles.blurb}>
+          {brands.length > 1
+            ? `Cooked to order at ${kitchenName}. ${brands.length} brands, one bag — mix brands and it still arrives together.`
+            : `Cooked to order at ${kitchenName}.`}
+        </Text>
+        <Pressable onPress={changeLocation} hitSlop={10}>
+          <Text style={styles.changeKitchen}>Change</Text>
+        </Pressable>
+      </View>
 
       {error ? (
         <View style={styles.center}>
@@ -104,7 +116,9 @@ const styles = StyleSheet.create({
   tabs: { paddingHorizontal: 16, paddingTop: 14, gap: 8 },
   tab: { height: 44, paddingHorizontal: 15, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   tabLabel: { fontFamily: type.display, fontWeight: '600', fontSize: 13 },
-  blurb: { fontFamily: type.display, fontWeight: '400', fontSize: 13, lineHeight: 19, color: customer.textSoft, paddingHorizontal: 16, paddingTop: 14 },
+  blurbRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 16, paddingTop: 14 },
+  blurb: { flex: 1, fontFamily: type.display, fontWeight: '400', fontSize: 13, lineHeight: 19, color: customer.textSoft },
+  changeKitchen: { fontFamily: type.display, fontWeight: '600', fontSize: 12.5, color: customer.text, textDecorationLine: 'underline' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 44 },
   errorText: { fontFamily: type.display, fontWeight: '500', fontSize: 13, color: '#C0472A', textAlign: 'center' },
   list: { padding: 16, gap: 12 },
