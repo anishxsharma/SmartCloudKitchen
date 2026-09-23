@@ -25,15 +25,19 @@ export function MenuItemFormScreen() {
   const editingId: string | undefined = route.params?.itemId;
 
   const items = useKitchenStore((s) => s.items);
+  const itemCosts = useKitchenStore((s) => s.itemCosts);
   const menuBrandId = useKitchenStore((s) => s.menuBrandId);
   const refreshItems = useKitchenStore((s) => s.refreshItems);
 
   const editing = editingId ? items.find((i) => i.id === editingId) : undefined;
+  // cost_cents isn't on MenuItem itself (org-scoped separately — see 0016); the store loads it
+  // alongside items in the same fetch, so it's already available by the time this screen mounts.
+  const editingCostCents = editingId ? itemCosts[editingId] : undefined;
 
   const [name, setName] = useState(editing?.name ?? '');
   const [description, setDescription] = useState(editing?.description ?? '');
   const [priceRupees, setPriceRupees] = useState(editing ? String(editing.price_cents / 100) : '');
-  const [costRupees, setCostRupees] = useState(editing ? String(editing.cost_cents / 100) : '');
+  const [costRupees, setCostRupees] = useState(editingCostCents != null ? String(editingCostCents / 100) : '');
   const [station, setStation] = useState<Station>(editing?.station ?? 'WOK');
   const [prepMinutes, setPrepMinutes] = useState(editing ? String(editing.prep_minutes) : '');
   const [photoUri, setPhotoUri] = useState<string | null>(editing?.image_url ?? null);

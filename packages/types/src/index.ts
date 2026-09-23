@@ -26,7 +26,8 @@ export interface MenuItem {
   brand_id: string;
   name: string;
   price_cents: number;
-  cost_cents: number;
+  /** Not included in fetchMenuItems (column-revoked from `authenticated`, scoped per-org) — use fetchMenuItemCosts instead. */
+  cost_cents?: number;
   station: Station;
   prep_minutes: number;
   available: boolean;

@@ -3,6 +3,7 @@ import {
   advanceOrder as apiAdvanceOrder,
   errorMessage,
   fetchBrands,
+  fetchMenuItemCosts,
   fetchMenuItems,
   fetchOpenOrders,
   fetchOrder,
@@ -20,6 +21,8 @@ interface KitchenState {
   error: string | null;
   brands: Brand[];
   items: MenuItem[];
+  /** menu_items.cost_cents is no longer part of MenuItem (column-revoked, org-scoped — see 0016); keyed by item id. */
+  itemCosts: Record<string, number>;
   stock: StockItem[];
   orders: Order[];
   lines: OrderLine[];
@@ -48,6 +51,7 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
   error: null,
   brands: [],
   items: [],
+  itemCosts: {},
   stock: [],
   orders: [],
   lines: [],
@@ -73,8 +77,9 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
     try {
       const brands = await fetchBrands(locationIds);
       const brandIds = brands.map((b) => b.id);
-      const [items, stock, orders] = await Promise.all([
+      const [items, itemCosts, stock, orders] = await Promise.all([
         fetchMenuItems(brandIds),
+        fetchMenuItemCosts(brandIds),
         fetchStockItems(locationIds),
         fetchOpenOrders(locationIds),
       ]);
@@ -83,6 +88,7 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
       set((s) => ({
         brands,
         items,
+        itemCosts,
         stock,
         orders,
         lines,
@@ -154,8 +160,8 @@ export const useKitchenStore = create<KitchenState>((set, get) => ({
     const brandIds = get().brands.map((b) => b.id);
     if (!brandIds.length) return;
     try {
-      const items = await fetchMenuItems(brandIds);
-      set({ items });
+      const [items, itemCosts] = await Promise.all([fetchMenuItems(brandIds), fetchMenuItemCosts(brandIds)]);
+      set({ items, itemCosts });
     } catch (err) {
       set({ error: errorMessage(err) });
     }

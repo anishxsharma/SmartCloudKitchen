@@ -11,10 +11,11 @@ import { Header } from '../components/Header';
 
 export function MenuScreen() {
   const navigation = useNavigation<any>();
-  const { brands: scopedBrands, items, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore(
+  const { brands: scopedBrands, items, itemCosts, menuBrandId, setMenuBrand, toggleItemAvailable } = useKitchenStore(
     useShallow((s) => ({
       brands: s.brands,
       items: s.items,
+      itemCosts: s.itemCosts,
       menuBrandId: s.menuBrandId,
       setMenuBrand: s.setMenuBrand,
       toggleItemAvailable: s.toggleItemAvailable,
@@ -75,7 +76,8 @@ export function MenuScreen() {
         keyExtractor={(i) => i.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const margin = Math.round((1 - item.cost_cents / item.price_cents) * 100);
+          const cost = itemCosts[item.id];
+          const margin = cost != null ? Math.round((1 - cost / item.price_cents) * 100) : null;
           return (
             <View style={[styles.row, { borderColor: item.available ? kitchen.borderSoft : '#5B2E22' }]}>
               <Pressable
@@ -90,7 +92,7 @@ export function MenuScreen() {
                 <View style={{ flex: 1, gap: 4 }}>
                   <Text style={[styles.name, { color: item.available ? kitchen.text : kitchen.textFaint }]}>{item.name}</Text>
                   <Text style={styles.meta}>
-                    {money(item.price_cents)} · {margin}% margin · {item.station}
+                    {money(item.price_cents)}{margin != null ? ` · ${margin}% margin` : ''} · {item.station}
                   </Text>
                 </View>
               </Pressable>

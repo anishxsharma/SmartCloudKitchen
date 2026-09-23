@@ -13,10 +13,23 @@ export async function fetchBrands(locationIds: string[]): Promise<Brand[]> {
   return data ?? [];
 }
 
+// cost_cents is deliberately excluded — it's revoked at the column level
+// for `authenticated` (0016) so it can be scoped per-org instead of
+// readable by any staff member platform-wide. Use fetchMenuItemCosts for
+// the one place (menu editing) that legitimately needs it.
+const MENU_ITEM_COLUMNS = 'id, brand_id, name, description, price_cents, station, prep_minutes, available, image_url';
+
 export async function fetchMenuItems(brandIds: string[]): Promise<MenuItem[]> {
-  const { data, error } = await getSupabase().from('menu_items').select('*').in('brand_id', brandIds);
+  const { data, error } = await getSupabase().from('menu_items').select(MENU_ITEM_COLUMNS).in('brand_id', brandIds);
   if (error) throw error;
   return data ?? [];
+}
+
+/** cost_cents per menu item, scoped to the caller's own org/location via the menu_item_costs view (see 0016). */
+export async function fetchMenuItemCosts(brandIds: string[]): Promise<Record<string, number>> {
+  const { data, error } = await getSupabase().from('menu_item_costs').select('menu_item_id, cost_cents').in('brand_id', brandIds);
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).map((r) => [r.menu_item_id, r.cost_cents]));
 }
 
 export async function fetchStockItems(locationIds: string[]): Promise<StockItem[]> {
@@ -53,7 +66,7 @@ export async function createMenuItem(input: MenuItemInput): Promise<MenuItem> {
       prep_minutes: input.prepMinutes,
       available: true,
     })
-    .select('*')
+    .select(MENU_ITEM_COLUMNS)
     .single();
 
   if (error) throw error;
