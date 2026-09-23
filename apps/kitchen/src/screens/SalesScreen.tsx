@@ -7,11 +7,10 @@ import {
   fetchTodaySalesByLocation,
   type FeedbackWithOrder,
 } from '@smartcloudkitchen/api-client';
-import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { DailyBrandSales, DailyLocationSales, HourlyOrders } from '@smartcloudkitchen/types';
 import { money, colorForBrand } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
-import { useVisibleLocationIds } from '../store/sessionStore';
+import { useLocationName, useOrgLocations, useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 const HOUR_LABELS = Array.from({ length: 24 }, (_, h) => String(h));
@@ -23,10 +22,10 @@ function mmss(totalSeconds: number): string {
 
 export function SalesScreen() {
   const visibleLocationIds = useVisibleLocationIds();
+  const orgLocations = useOrgLocations();
   const multiLocation = visibleLocationIds.length > 1;
-  const locationLabel = multiLocation
-    ? 'ALL LOCATIONS'
-    : (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '');
+  const singleLocationName = useLocationName(!multiLocation ? visibleLocationIds[0] : null);
+  const locationLabel = multiLocation ? 'ALL LOCATIONS' : singleLocationName.toUpperCase();
 
   const [loading, setLoading] = useState(true);
   const [byLocation, setByLocation] = useState<DailyLocationSales[]>([]);
@@ -74,7 +73,7 @@ export function SalesScreen() {
   const hmax = Math.max(1, ...hours);
 
   const brandRows = byBrand.map((b) => {
-    const locName = LOCATIONS.find((l) => l.id === b.location_id)?.name ?? '';
+    const locName = orgLocations.find((l) => l.id === b.location_id)?.name ?? '';
     const margin = b.revenue_cents > 0 ? Math.round((1 - b.cost_cents / b.revenue_cents) * 100) : 0;
     return { ...b, key: `${b.location_id}-${b.brand_id}`, suffix: multiLocation ? ` · ${locName}` : '', margin };
   });

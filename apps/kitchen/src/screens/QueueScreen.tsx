@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { OrderStage } from '@smartcloudkitchen/types';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
-import { useVisibleLocationIds } from '../store/sessionStore';
+import { useLocationName, useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 import { OrderCard } from '../components/OrderCard';
 import { TicketDetail } from '../components/TicketDetail';
@@ -47,6 +46,7 @@ export function QueueScreen() {
       }))
     );
   const visibleLocationIds = useVisibleLocationIds();
+  const singleLocationName = useLocationName(visibleLocationIds.length === 1 ? visibleLocationIds[0] : null);
 
   // Only tick while there's something with a live promise clock —
   // otherwise this runs for the rest of the session the moment the app
@@ -61,10 +61,7 @@ export function QueueScreen() {
 
   const scopedOrders = orders.filter((o) => visibleLocationIds.includes(o.location_id));
   const brandCount = brands.length;
-  const locationLabel =
-    visibleLocationIds.length === 1
-      ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
-      : 'ALL LOCATIONS';
+  const locationLabel = visibleLocationIds.length === 1 ? singleLocationName.toUpperCase() : 'ALL LOCATIONS';
 
   const counts: Record<'all' | OrderStage, number> = { all: 0, new: 0, cooking: 0, ready: 0, picked: 0 };
   scopedOrders.forEach((o) => {

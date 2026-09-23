@@ -2,11 +2,10 @@ import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/react/shallow';
 import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { money } from '@smartcloudkitchen/domain';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
-import { useVisibleLocationIds } from '../store/sessionStore';
+import { useLocationName, useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function MenuScreen() {
@@ -22,11 +21,9 @@ export function MenuScreen() {
     }))
   );
   const visibleLocationIds = useVisibleLocationIds();
+  const singleLocationName = useLocationName(visibleLocationIds.length === 1 ? visibleLocationIds[0] : null);
 
-  const locationLabel =
-    visibleLocationIds.length === 1
-      ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
-      : 'ALL LOCATIONS';
+  const locationLabel = visibleLocationIds.length === 1 ? singleLocationName.toUpperCase() : 'ALL LOCATIONS';
 
   // Owner switched locations (or a manager's brand fell out of scope) —
   // fall back to the first brand this screen can actually show.

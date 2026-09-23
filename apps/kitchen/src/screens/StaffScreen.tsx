@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { errorMessage, fetchScopedStaff, inviteStaff } from '@smartcloudkitchen/api-client';
-import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import type { Staff, StaffRole } from '@smartcloudkitchen/types';
 import { kitchen, minTapTarget, type } from '@smartcloudkitchen/design-tokens';
-import { useCurrentStaff } from '../store/sessionStore';
+import { useCurrentStaff, useOrgLocations } from '../store/sessionStore';
 
 const ROLE_LABEL: Record<StaffRole, string> = {
   line_cook: 'Line cook',
@@ -27,7 +26,8 @@ export function StaffScreen() {
   const [inviting, setInviting] = useState(false);
 
   const invitableRoles: StaffRole[] = isOwner ? ['line_cook', 'kitchen_manager', 'owner'] : ['line_cook', 'kitchen_manager'];
-  const orgLocations = isOwner ? LOCATIONS.filter((l) => l.org_id === me?.org_id) : [];
+  const allOrgLocations = useOrgLocations();
+  const orgLocations = isOwner ? allOrgLocations : [];
 
   const loadTeam = useCallback(async () => {
     setLoadingTeam(true);

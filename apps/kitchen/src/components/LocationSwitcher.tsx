@@ -1,16 +1,14 @@
 import { ScrollView, Pressable, StyleSheet, Text } from 'react-native';
-import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
-import { useCurrentStaff, useSessionStore } from '../store/sessionStore';
+import { useCurrentStaff, useOrgLocations, useSessionStore } from '../store/sessionStore';
 
 /** Only rendered for owners — line cooks and managers belong to one kitchen. */
 export function LocationSwitcher() {
   const staff = useCurrentStaff();
+  const orgLocations = useOrgLocations();
   const selected = useSessionStore((s) => s.selectedLocationId);
   const selectLocation = useSessionStore((s) => s.selectLocation);
   if (staff?.role !== 'owner') return null;
-
-  const orgLocations = LOCATIONS.filter((l) => l.org_id === staff.org_id);
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.wrap}>

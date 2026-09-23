@@ -1,9 +1,8 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
-import { LOCATIONS } from '@smartcloudkitchen/mock-data';
 import { kitchen, type } from '@smartcloudkitchen/design-tokens';
 import { useKitchenStore } from '../store/kitchenStore';
-import { useVisibleLocationIds } from '../store/sessionStore';
+import { useLocationName, useVisibleLocationIds } from '../store/sessionStore';
 import { Header } from '../components/Header';
 
 export function StockScreen() {
@@ -17,12 +16,10 @@ export function StockScreen() {
     }))
   );
   const visibleLocationIds = useVisibleLocationIds();
+  const singleLocationName = useLocationName(visibleLocationIds.length === 1 ? visibleLocationIds[0] : null);
 
   const scopedStock = stock.filter((s) => visibleLocationIds.includes(s.location_id));
-  const locationLabel =
-    visibleLocationIds.length === 1
-      ? (LOCATIONS.find((l) => l.id === visibleLocationIds[0])?.name.toUpperCase() ?? '')
-      : 'ALL LOCATIONS';
+  const locationLabel = visibleLocationIds.length === 1 ? singleLocationName.toUpperCase() : 'ALL LOCATIONS';
 
   const withPct = scopedStock.map((s) => ({ ...s, pct: Math.round((s.qty / s.par) * 100) }));
   const lowCount = withPct.filter((s) => s.pct < 30).length;
