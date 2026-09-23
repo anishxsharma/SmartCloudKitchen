@@ -56,6 +56,11 @@ export function ItemScreen() {
       <Pressable
         onPress={() => {
           addToCart();
+          // Pop back to Browse within this tab's own stack first — otherwise
+          // the Menu tab is left stranded on this screen, which renders
+          // blank once itemId is cleared (see the `if (!item) return null`
+          // above), and reappears blank the next time Menu is tapped.
+          navigation.goBack();
           navigation.getParent()?.navigate('Bag');
         }}
         style={styles.cta}

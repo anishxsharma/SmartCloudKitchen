@@ -17,6 +17,11 @@ export function PhoneAuthScreen() {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [googlePhone, setGooglePhone] = useState('');
+  // Shown when a CTA is tapped with an invalid field — the placeholder
+  // text below ("98765 43210") looks exactly like a real typed number, so
+  // a silently-disabled button gave zero feedback when someone tapped
+  // Send Code without having actually typed anything.
+  const [validationHint, setValidationHint] = useState<string | null>(null);
 
   const {
     otpPhone,
@@ -57,10 +62,13 @@ export function PhoneAuthScreen() {
   useEffect(() => {
     if (!signedInCustomer) return;
     placeOrder().then(() => {
+      // Pop back to the cart within the Bag tab's own stack either way —
+      // otherwise the Bag tab is left stranded on this screen (same class
+      // of bug as ItemScreen's blank-Menu issue: switching tabs doesn't
+      // reset the tab's own internal navigation stack).
+      navigation.goBack();
       if (useCustomerStore.getState().trackOrderId) {
         navigation.getParent()?.navigate('Orders');
-      } else {
-        navigation.goBack();
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,7 +98,7 @@ export function PhoneAuthScreen() {
             <TextInput
               style={styles.input}
               value={googlePhone}
-              onChangeText={setGooglePhone}
+              onChangeText={(v) => { setGooglePhone(v); setValidationHint(null); }}
               placeholder="98765 43210"
               placeholderTextColor={customer.textFaint}
               keyboardType="phone-pad"
@@ -98,8 +106,12 @@ export function PhoneAuthScreen() {
               editable={!finishingGoogleSignup}
             />
             <Pressable
-              disabled={googlePhone.trim().length < 6 || finishingGoogleSignup}
-              onPress={() => finishGoogleSignup(toE164(googlePhone))}
+              disabled={finishingGoogleSignup}
+              onPress={() => {
+                if (googlePhone.trim().length < 6) { setValidationHint('Enter your phone number first.'); return; }
+                setValidationHint(null);
+                finishGoogleSignup(toE164(googlePhone));
+              }}
               style={[styles.cta, (googlePhone.trim().length < 6 || finishingGoogleSignup) && { opacity: 0.5 }]}
             >
               {finishingGoogleSignup ? <ActivityIndicator color={customer.ctaFg} /> : <Text style={styles.ctaLabel}>Continue &amp; place order</Text>}
@@ -110,20 +122,24 @@ export function PhoneAuthScreen() {
             <TextInput
               style={styles.input}
               value={code}
-              onChangeText={setCode}
+              onChangeText={(v) => { setCode(v); setValidationHint(null); }}
               placeholder="6-digit code"
               placeholderTextColor={customer.textFaint}
               keyboardType="number-pad"
               editable={!verifyingOtp}
             />
             <Pressable
-              disabled={code.trim().length === 0 || verifyingOtp}
-              onPress={() => verifyOtp(code.trim())}
+              disabled={verifyingOtp}
+              onPress={() => {
+                if (code.trim().length === 0) { setValidationHint('Enter the code we texted you.'); return; }
+                setValidationHint(null);
+                verifyOtp(code.trim());
+              }}
               style={[styles.cta, (code.trim().length === 0 || verifyingOtp) && { opacity: 0.5 }]}
             >
               {verifyingOtp ? <ActivityIndicator color={customer.ctaFg} /> : <Text style={styles.ctaLabel}>Verify &amp; place order</Text>}
             </Pressable>
-            <Pressable onPress={cancelPhoneAuth} hitSlop={12}>
+            <Pressable onPress={() => { cancelPhoneAuth(); setValidationHint(null); }} hitSlop={12}>
               <Text style={styles.link}>Use a different number</Text>
             </Pressable>
           </>
@@ -132,7 +148,7 @@ export function PhoneAuthScreen() {
             <TextInput
               style={styles.input}
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={(v) => { setPhone(v); setValidationHint(null); }}
               placeholder="98765 43210"
               placeholderTextColor={customer.textFaint}
               keyboardType="phone-pad"
@@ -140,8 +156,12 @@ export function PhoneAuthScreen() {
               editable={!busy}
             />
             <Pressable
-              disabled={phone.trim().length < 6 || busy}
-              onPress={() => sendOtp(toE164(phone))}
+              disabled={busy}
+              onPress={() => {
+                if (phone.trim().length < 6) { setValidationHint('Enter your phone number first — the box above is just an example.'); return; }
+                setValidationHint(null);
+                sendOtp(toE164(phone));
+              }}
               style={[styles.cta, (phone.trim().length < 6 || busy) && { opacity: 0.5 }]}
             >
               {sendingOtp ? <ActivityIndicator color={customer.ctaFg} /> : <Text style={styles.ctaLabel}>Send code</Text>}
@@ -153,14 +173,14 @@ export function PhoneAuthScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <Pressable disabled={busy} onPress={signInWithGoogle} style={[styles.googleBtn, busy && { opacity: 0.5 }]}>
+            <Pressable disabled={busy} onPress={() => { setValidationHint(null); signInWithGoogle(); }} style={[styles.googleBtn, busy && { opacity: 0.5 }]}>
               {googleSigningIn ? <ActivityIndicator color={customer.text} /> : <Text style={styles.googleLabel}>Continue with Google</Text>}
             </Pressable>
           </>
         )}
       </View>
 
-      {authError ? <Text style={styles.error}>{authError}</Text> : null}
+      {validationHint ? <Text style={styles.hint}>{validationHint}</Text> : authError ? <Text style={styles.error}>{authError}</Text> : null}
     </View>
   );
 }
@@ -174,6 +194,7 @@ const styles = StyleSheet.create({
   ctaLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 15, color: customer.ctaFg },
   link: { fontFamily: type.display, fontWeight: '600', fontSize: 12.5, color: customer.textSoft, textAlign: 'center', marginTop: 4 },
   error: { marginTop: 20, fontFamily: type.display, fontSize: 12, color: '#C0472A', textAlign: 'center' },
+  hint: { marginTop: 20, fontFamily: type.display, fontSize: 12, color: customer.textSoft, textAlign: 'center' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   dividerLine: { flex: 1, height: 1, backgroundColor: customer.border },
   dividerLabel: { fontFamily: type.mono, fontWeight: '600', fontSize: 10, letterSpacing: 1, color: customer.textFaint },
