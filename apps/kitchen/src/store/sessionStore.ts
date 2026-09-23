@@ -90,6 +90,7 @@ export function useVisibleLocationIds(): string[] {
   const staff = useSessionStore((s) => s.staff);
   const selectedLocationId = useSessionStore((s) => s.selectedLocationId);
   if (!staff) return [];
+  if (staff.role === 'platform_admin') return []; // belongs to no org/location
   if (staff.role !== 'owner') return [staff.location_id];
   const orgLocationIds = LOCATIONS.filter((l) => l.org_id === staff.org_id).map((l) => l.id);
   return selectedLocationId ? [selectedLocationId] : orgLocationIds;

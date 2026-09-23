@@ -1,6 +1,6 @@
 export type OrderStage = 'new' | 'cooking' | 'ready' | 'picked';
 export type Channel = 'direct' | 'zipp' | 'munchly';
-export type StaffRole = 'line_cook' | 'kitchen_manager' | 'owner';
+export type StaffRole = 'line_cook' | 'kitchen_manager' | 'owner' | 'platform_admin';
 export type Station = 'WOK' | 'GRILL' | 'FRY' | 'OVEN';
 
 export interface Organization {
@@ -69,7 +69,8 @@ export interface Address {
  */
 export type Staff =
   | { id: string; display_name: string; role: 'line_cook' | 'kitchen_manager'; location_id: string; org_id: null }
-  | { id: string; display_name: string; role: 'owner'; location_id: null; org_id: string };
+  | { id: string; display_name: string; role: 'owner'; location_id: null; org_id: string }
+  | { id: string; display_name: string; role: 'platform_admin'; location_id: null; org_id: null };
 
 export interface Order {
   id: string;

@@ -6,7 +6,12 @@ import type { Staff, StaffRole } from '@smartcloudkitchen/types';
 import { kitchen, minTapTarget, type } from '@smartcloudkitchen/design-tokens';
 import { useCurrentStaff } from '../store/sessionStore';
 
-const ROLE_LABEL: Record<StaffRole, string> = { line_cook: 'Line cook', kitchen_manager: 'Kitchen manager', owner: 'Owner' };
+const ROLE_LABEL: Record<StaffRole, string> = {
+  line_cook: 'Line cook',
+  kitchen_manager: 'Kitchen manager',
+  owner: 'Owner',
+  platform_admin: 'Platform admin', // never actually shown here — this screen is gated to org-scoped roles
+};
 
 export function StaffScreen() {
   const me = useCurrentStaff();
