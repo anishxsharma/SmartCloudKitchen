@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { errorMessage, fetchScopedStaff, inviteStaff } from '@smartcloudkitchen/api-client';
+import { createLocation, errorMessage, fetchScopedStaff, inviteStaff } from '@smartcloudkitchen/api-client';
 import type { Staff, StaffRole } from '@smartcloudkitchen/types';
 import { kitchen, minTapTarget, type } from '@smartcloudkitchen/design-tokens';
-import { useCurrentStaff, useOrgLocations } from '../store/sessionStore';
+import { useCurrentStaff, useOrgLocations, useSessionStore } from '../store/sessionStore';
 
 const ROLE_LABEL: Record<StaffRole, string> = {
   line_cook: 'Line cook',
@@ -15,6 +15,7 @@ const ROLE_LABEL: Record<StaffRole, string> = {
 export function StaffScreen() {
   const me = useCurrentStaff();
   const isOwner = me?.role === 'owner';
+  const refreshOrgLocations = useSessionStore((s) => s.refreshOrgLocations);
 
   const [team, setTeam] = useState<Staff[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
@@ -25,9 +26,26 @@ export function StaffScreen() {
   const [locationId, setLocationId] = useState<string | null>(isOwner ? null : (me?.location_id ?? null));
   const [inviting, setInviting] = useState(false);
 
+  const [newLocationName, setNewLocationName] = useState('');
+  const [addingLocation, setAddingLocation] = useState(false);
+
   const invitableRoles: StaffRole[] = isOwner ? ['line_cook', 'kitchen_manager', 'owner'] : ['line_cook', 'kitchen_manager'];
   const allOrgLocations = useOrgLocations();
   const orgLocations = isOwner ? allOrgLocations : [];
+
+  async function submitNewLocation() {
+    if (!me || me.role !== 'owner' || !newLocationName.trim()) return;
+    setAddingLocation(true);
+    try {
+      await createLocation({ orgId: me.org_id, name: newLocationName.trim() });
+      setNewLocationName('');
+      await refreshOrgLocations();
+    } catch (err) {
+      Alert.alert('Could not add location', errorMessage(err));
+    } finally {
+      setAddingLocation(false);
+    }
+  }
 
   const loadTeam = useCallback(async () => {
     setLoadingTeam(true);
@@ -78,6 +96,35 @@ export function StaffScreen() {
           {team.length === 0 ? <Text style={styles.empty}>No team members yet.</Text> : null}
         </View>
       )}
+
+      {isOwner ? (
+        <>
+          <Text style={styles.sectionTitle}>Locations</Text>
+          <View style={{ gap: 8 }}>
+            {allOrgLocations.map((l) => (
+              <View key={l.id} style={styles.row}>
+                <Text style={styles.rowName}>{l.name}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.addLocationRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              value={newLocationName}
+              onChangeText={setNewLocationName}
+              placeholder="New location name"
+              placeholderTextColor={kitchen.textFaint}
+            />
+            <Pressable
+              disabled={addingLocation || !newLocationName.trim()}
+              onPress={submitNewLocation}
+              style={[styles.addLocationBtn, (addingLocation || !newLocationName.trim()) && { opacity: 0.5 }]}
+            >
+              {addingLocation ? <ActivityIndicator color="#191510" /> : <Text style={styles.addLocationLabel}>Add</Text>}
+            </Pressable>
+          </View>
+        </>
+      ) : null}
 
       <Text style={styles.sectionTitle}>Invite someone</Text>
 
@@ -159,6 +206,9 @@ const styles = StyleSheet.create({
   empty: { fontFamily: type.display, fontSize: 13, color: kitchen.textFaint },
   fieldLabel: { fontFamily: type.mono, fontWeight: '600', fontSize: 10, letterSpacing: 1, color: kitchen.textFaint },
   input: { minHeight: minTapTarget, borderRadius: 12, borderWidth: 1, borderColor: kitchen.borderSoft, backgroundColor: kitchen.surface, paddingHorizontal: 14, color: kitchen.text, fontFamily: type.display, fontSize: 15 },
+  addLocationRow: { flexDirection: 'row', gap: 8 },
+  addLocationBtn: { minWidth: 64, minHeight: minTapTarget, borderRadius: 12, backgroundColor: kitchen.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  addLocationLabel: { fontFamily: type.display, fontWeight: '700', fontSize: 14, color: '#191510' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { minHeight: 40, paddingHorizontal: 14, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   chipLabel: { fontFamily: type.display, fontWeight: '600', fontSize: 12 },
