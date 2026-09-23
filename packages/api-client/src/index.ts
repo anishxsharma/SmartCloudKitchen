@@ -5,6 +5,7 @@ export * from './catalog';
 export * from './feedback';
 export * from './analytics';
 export * from './staff';
+export * from './platformAdmin';
 export * from './customerAuth';
 export * from './googleAuth';
 export * from './offlineQueue';

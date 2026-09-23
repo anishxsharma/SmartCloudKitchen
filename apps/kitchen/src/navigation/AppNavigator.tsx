@@ -14,6 +14,7 @@ import { MenuItemFormScreen } from '../screens/MenuItemFormScreen';
 import { StockScreen } from '../screens/StockScreen';
 import { SalesScreen } from '../screens/SalesScreen';
 import { StaffScreen } from '../screens/StaffScreen';
+import { PlatformAdminScreen } from '../screens/PlatformAdminScreen';
 import { useInviteDeepLink } from '../hooks/useInviteDeepLink';
 
 const Tab = createBottomTabNavigator();
@@ -108,6 +109,12 @@ export function AppNavigator() {
       );
     }
     return <SignInScreen />;
+  }
+
+  // Belongs to no org/location — none of the org-scoped tabs in
+  // SignedInTabs (Queue/Menu/Stock/Sales/Staff) apply to this role.
+  if (staff.role === 'platform_admin') {
+    return <PlatformAdminScreen />;
   }
 
   return <SignedInTabs />;
